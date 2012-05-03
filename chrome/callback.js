@@ -1,8 +1,10 @@
+if (window.chrome.extension) { // yeah we're in the extension
+
 // Code from Google. At least I understand it...
 // So, this code takes the hash of the location, and then
 //   splits it into parts using regex.exec() into the
 //   params object.
-var params = {}, queryString = location.hash.substring(1),
+var params = {}, queryString = location.hash.replace(/^#/,"");
     regex = /([^&=]+)=([^&]*)/g, m;
 while (m = regex.exec(queryString)) {
 	params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
@@ -10,7 +12,7 @@ while (m = regex.exec(queryString)) {
 // end
 
 // This is pretty much the biggest library I use
-function $(id){return document.getElementById(id)};
+function $(q){return document.querySelectorAll(q)};
 
 // Set up the access token and client id
 var access_token = "",
@@ -18,9 +20,9 @@ var access_token = "",
 
 if (params.error) {
 	// Goodness me, there's an error
-	$("status").innerHTML="Invalid query parameters: "+params.error;
+	$("#status")[0].innerHTML="Invalid query parameters: "+params.error;
 	if(params.error=="access_denied") {
-		$("status").innerHTML += "\n\nWhich means you didn't allow access. Hooray.";
+		$("#status")[0].innerHTML += "\n\nWhich means you didn't allow access. Hooray.";
 	}
 } else {
 	access_token = params.access_token;
@@ -32,16 +34,18 @@ if (params.error) {
 		
 		if (response.audience != "578737917000.apps.googleusercontent.com") {
 			// I still don't know why I have to do this
-			$("status").innerHTML="Token validation failed (wrong clientid): "+response.audience;
+			$("#status")[0].textContent="Token validation failed (wrong clientid): "+response.audience;
 		}
 		else {
 			// hurrah
-			location.replace("chrome-extension://__MSG_@@extension_id__/index.html");
+			localStorage.setItem("access_code",access_token);
+			localStorage.setItem("expires",Date.now()+response.expires_in);
+			//location.replace(chrome.extension.getURL("index.html"));
 		}
 	}
 	xhr.onerror=function(e){
-		$("status").innerHTML="Token validation failed: request error ("+e.toString()+")";
+		$("#status")[0].textContent="Token validation failed: xhr request error ("+e.toString()+")";
 	}
 	xhr.send();
 }
-
+}
