@@ -1,0 +1,25 @@
+{
+	"name": "App Chat",
+	"version": "0.0",
+	"manifest_version": 2,
+	
+	"icons": {
+	},
+	
+	"app": {
+		"launch": {
+			"local_path": "login.html"
+		}
+	},
+	
+	"content_scripts": [{
+		"matches": ["https://app-chat.googlecode.com/svn/trunk/callback.html"],
+		"js": ["oauth2_inject.js"],
+		"run_at": "document_start"
+	}],
+	"permissions": [
+		"https://accounts.google.com/",
+		"https://docs.google.com/",
+		"https://spreadsheets.google.com/"
+	]
+}
