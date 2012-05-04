@@ -4,7 +4,7 @@ if (window.chrome.extension) { // yeah we're in the extension
 // So, this code takes the hash of the location, and then
 //   splits it into parts using regex.exec() into the
 //   params object.
-var params = {}, queryString = location.hash.replace(/^#/,"");
+var params = {}, queryString = location.hash.replace(/^#/,""),
     regex = /([^&=]+)=([^&]*)/g, m;
 while (m = regex.exec(queryString)) {
 	params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
@@ -39,8 +39,9 @@ if (params.error) {
 		else {
 			// hurrah
 			localStorage.setItem("access_code",access_token);
-			localStorage.setItem("expires",Date.now()+response.expires_in);
+			localStorage.setItem("expires",Math.round(Date.now()*1000+response.expires_in));
 			//location.replace(chrome.extension.getURL("index.html"));
+			location.replace("login.html");
 		}
 	}
 	xhr.onerror=function(e){

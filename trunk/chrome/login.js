@@ -10,7 +10,7 @@ function getLocalStorage(id) {
 window.onload = function() {
 	var access_code = getLocalStorage("access_code"),
 	    expires = parseInt(getLocalStorage("expires")),
-	    logged_in = access_code && expires && expires === expires && expires < Date.now() && true;
+	    logged_in = access_code && expires && expires === expires && expires > Date.now() && true;
 	
 	$("span#access_code")[0].textContent = (logged_in) ? access_code : "";
 	$("span#logged_in")[0].textContent = (logged_in) ? "yes" : "no";
