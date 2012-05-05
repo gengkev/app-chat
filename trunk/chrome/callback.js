@@ -30,23 +30,39 @@ if (params.error) {
 	var xhr = new XMLHttpRequest();
 	xhr.open("GET","https://www.googleapis.com/oauth2/v1/tokeninfo?access_token="+access_token,true);
 	xhr.onload=function(){
-		var response = JSON.parse(xhr.responseText);
+		var response = JSON.parse(xhr.responseText), curDate = Date.now();
 		
 		if (response.audience != "578737917000.apps.googleusercontent.com") {
 			// I still don't know why I have to do this
-			$("#status")[0].textContent="Token validation failed (wrong clientid): "+response.audience;
+			$("#status")[0].textContent="Token validation failed (wrong clientid): "
+				+ response.audience + " versus " + client_id + ", error " + response.error;
 		}
 		else {
 			// hurrah
-			localStorage.setItem("access_code",access_token);
-			localStorage.setItem("expires",Math.round(Date.now()*1000+response.expires_in));
-			//location.replace(chrome.extension.getURL("index.html"));
-			location.replace("login.html");
+			var xhr2 = new XMLHttpRequest();
+			xhr2.open("GET","https://www.googleapis.com/oauth2/v1/userinfo?access_token="+access_token, true);
+			xhr2.onload = function() {
+				var response2 = JSON.parse(xhr2.responseText);
+				if (response.user_id == response2.id && response2.email) {
+					done(access_token,Math.round(curDate/1000+response.expires_in),response2.email);
+				} else {
+					xhr.onerror("something weird happened");
+				}
+			}
+			xhr2.onerror = xhr.onerror;
+			xhr2.send();
 		}
 	}
 	xhr.onerror=function(e){
 		$("#status")[0].textContent="Token validation failed: xhr request error ("+e.toString()+")";
 	}
 	xhr.send();
+}
+function done(access_token,expires,email) {
+	localStorage.setItem("access_token",access_token);
+	localStorage.setItem("expires",expires);
+	localStorage.setItem("email",email);
+	//location.replace(chrome.extension.getURL("index.html"));
+	location.replace("login.html");
 }
 }
