@@ -63,6 +63,6 @@ function done(access_token,expires,email) {
 	localStorage.setItem("expires",expires);
 	localStorage.setItem("email",email);
 	//location.replace(chrome.extension.getURL("index.html"));
-	location.replace("login.html");
+	location.replace("index.html");
 }
 }
