@@ -114,7 +114,7 @@ function addToSpreadsheet(e,r) {
     user, // their email
     "EB", // badges :D
     team,
-    0, // -1: banned, 0: offline, 1: idle/away, 2: online, 3: busy/dnd
+    0, // negative: banned until that date, 0: offline, 1: online, 2: busy, 3: idle (online), 4: idle (busy)
     "Set status here", // initial status
     newss.getId()// spreadsheet ID
   ]]);
@@ -125,12 +125,17 @@ function addToSpreadsheet(e,r) {
  * 1, 2, 3, 4 are saved for later expansion :D
  */
 function ssOnEdit(e) {
-  /*
+
   Logger.log(e);
+  /*
+  Logger.log(e.range);
+  Logger.log("test2");
   var sheet = e.range.getSheet(),
       ss = sheet.getParent();
   
-  Logger.log(e.range.getValues());
+  Logger.log(e.range.rowStart + " " + e.range.rowEnd);
+  Logger.log(e.range.columnStart + " " + e.range.columnEnd);
+
   Logger.log(ss.getId());
   
   var otherss = SpreadsheetApp.getActiveSpreadsheet();
@@ -139,7 +144,6 @@ function ssOnEdit(e) {
   
   var range = sheet.getRange(1,1,1,5),
       vals  = range.getValues()[0];
-  
   
   //range.clear();
   
@@ -159,8 +163,10 @@ function ssOnEdit(e) {
   Logger.log(vals[1]);
 */
 // temporary workaround
-  
-  Logger.log(e);
+  if (e.range.rowStart != 1 || e.range.rowEnd != 1 || 
+      e.range.columnStart != 1 || e.range.columnEnd != 1) {
+    Logger.log("exiting because range dims are incorrect");
+  }
   
   // update chat thingy
   var ss2 = SpreadsheetApp.openById("0Ai-ZuFD3X1z4dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E"),
@@ -172,8 +178,8 @@ function ssOnEdit(e) {
   Logger.log("hai");
   Logger.log(user);
   
-  var emails = ss2_1.getRange(1,5,ss2_1.getMaxRows(),1).getValues(),
-      found = false;
+  var emails = ss2_1.getRange(2,5,ss2_1.getMaxRows(),1).getValues(),
+      found = false; // for emails dont include header
   for (var i=0;i<emails.length;i++) {
     if (user == emails[i][0]) {
       // okai
@@ -186,33 +192,40 @@ function ssOnEdit(e) {
     Logger.log("emails: \""+emails.toString()+"\" user: \""+user+"\"");
     return 0;
   }
-  
-  var ss3 = SpreadsheetApp.openById(ss2_1.getRange(i+1,10,1,1).getValue()),
+  Logger.log(i);
+  var ss3 = SpreadsheetApp.openById(ss2_1.getRange(i+2,10,1,1).getValue()),
       sheet3 = ss3.getSheets()[1],
-      range3 = sheet3.getRange(1,1,1,2);
+      range3 = sheet3.getRange(1,1,1,2),
+      values = range3.getValues()[0];
   
-  if (range3.getValue() != e.value) {
-    Logger.log("exited because "+range3.getValue()+" != "+e.value);
-    return 0;
-  }
+  //if (range3.getValue() != e.value) {
+  //  Logger.log("exited because "+range3.getValue()+" != "+e.value);
+  //  return 0;
+  //}
   range3.clear();
   
-  //ss2_0.insertRowAfter(r2);
-  //ss2_0.getRange(r2+1,1,1,4).setValues([[
-  
-  ss2_0.appendRow([
-    Math.round(new Date()/1000),
-    e.user,
-    "chat", 
-    e.value
-  ]);
-  
-  //]]);
-  
-  
+  /* possiblities for values[0]:
+   * 'chat' - allow all
+   * 'status_state' - allow all
+   * 'status_message' - allow all
+   */
+  switch(values[0]) {
+    case "chat":
+      ss2_0.appendRow([
+        Math.round(new Date()/1000),
+        e.user,
+        values[0],
+        values[1]
+      ]);
+    break;
+    case "status_state":
+      break;
+    case "status_message":
+      break;
+  }
 }
 function blah() {
-  addToSpreadsheet(null,3);
+  addToSpreadsheet(null,13);
 }
 function blah2() {
   //var ss = SpreadsheetApp.openById("0Ai-ZuFD3X1z4dGswdFczVEpmNDFITzJUR3lxQ0VkRFE");
@@ -238,7 +251,7 @@ function cleanTriggers() {
       sheet = ss.getSheets()[1],
       len = sheet.getMaxRows(),
       values = arrayMap(
-        sheet.getRange(1,10,len,1).getValues(),
+        sheet.getRange(2,10,len,1).getValues(), //first row is header
         function(n) {
           //try {
           //  return SpreadsheetApp.openById(n[0]).getId();

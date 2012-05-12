@@ -7,10 +7,36 @@ var users = [
 		status_state: 0,
 		status_message: "Set status here",
 		email: "",
-		el: $("#self")[0],
+		team: "",
+		el: null,
 		self: true
 	}
 ];
+/* Status states:
+ * (negative) - Banned until (date)
+ * 0 - offline
+ * 1 - online
+ * 2 - busy
+ * 3 - idle (online)
+ * 4 - idle (busy)
+ */
+var status_states = {
+	"": "banned",
+	"0": "offline",
+	"1": "available",
+	"2": "busy",
+	"3": "idle",
+	"4": "idle"
+};
+function getStatusState(status) {
+	return status_states[status] || status_states[""];
+}
+var dlList = {
+	"Status": "status_state_text",
+	"Email": "email",
+	"Full name": "full_name",
+	"Team": "team"
+}
 
 function getLocalStorage(id) {
 	var s = localStorage.getItem(id);
@@ -68,9 +94,12 @@ function setLoginState() {
 		users[0].email = email;
 		
 		getUsers();
+		beginPoll();
 	}
 }
 document.addEventListener("DOMContentLoaded",function(e){
+	users[0].el = $("#self")[0];
+	
 	setLoginState();
 	$("button#user")[0].onclick = function() {
 		location.replace("#login");
@@ -87,6 +116,13 @@ document.addEventListener("DOMContentLoaded",function(e){
 	}
 },false);
 
+function beginPoll() {
+	var USERS_INTERVAL = 10000;
+	var CHAT_INTERVAL = 2000;
+	
+	setInterval(getUsers,USERS_INTERVAL);
+}
+
 function getUsers() {
 	var userlist = $("#userlist")[0];
 	var feed = "https://spreadsheets.google.com/feeds/list/tS9UIr5fIO6cnk_cSiu-RcA/od6/private/full?alt=json";
@@ -97,33 +133,86 @@ function getUsers() {
 		var json = JSON.parse(e.target.responseText);
 		var entries = json.feed.entry;
 		entries.forEach(function(el,i) {
-			var li = document.createElement("li");
-			var abbr = document.createElement("abbr");
-			abbr.classList.add("user");
-			abbr.setAttribute("title",el.gsx$fullname.$t);
-			abbr.textContent = el.gsx$usagename.$t;
-			li.appendChild(abbr);
-			
-			var span = document.createElement("span");
-			span.classList.add("status");
-			span.textContent = el.gsx$statusmessage.$t;
-			li.appendChild(span);
-			
-			var dl = document.createElement("dl");
-			{
-				var dt = document.createElement("dt");
-				dt.textContent = "Email";
-				dl.appendChild(dt);
-				
-				var dd = document.createElement("dd");
-				dd.textContent = el.gsx$emailaddress.$t;
-				dl.appendChild(dd);
-			}
-			li.appendChild(dl);
-			
-			userlist.appendChild(li);
+			updateUser({
+				name: el.gsx$usagename.$t,
+				full_name: el.gsx$fullname.$t,
+				status_state: el.gsx$statusstate.$t,
+				status_state_text: getStatusState(el.gsx$statusstate.$t),
+				status_message: el.gsx$statusmessage.$t,
+				email: el.gsx$emailaddress.$t,
+				team: el.gsx$rcmsteam.$t
+			});
 		});
+		// now we must sort the user list
 	});
+}
+function copyHashMap(map) {
+	var output = {};
+	for (var i in map) {
+		if (!map.hasOwnProperty(i)) continue;
+		output[i] = map[i];
+	}
+	return output;
+}
+function updateUser(map) {
+	map = copyHashMap(map); // to keep the object "pure"?
+	
+	for (var i=0,found=false;i<users.length;i++) {
+		if (users[i].email == map.email) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		// yay we have to create it
+		
+		var li = document.createElement("li");
+		
+		// lazy I am
+		li.innerHTML = '<abbr class=\"user\"></abbr><span class=\"status\"></span><dl></dl>';
+		dl = li.getElementsByTagName("dl")[0];
+		
+		for (var j in dlList) {
+			if (!dlList.hasOwnProperty(j)) continue;
+			var span = document.createElement("span"),
+			    dt = document.createElement("dt"),
+			    dd = document.createElement("dd");
+			
+			dt.textContent = j;
+			dd.textContent = map[dlList[j]];
+			
+			span.appendChild(dt);
+			span.appendChild(dd);
+			dl.appendChild(span);
+		}
+		
+		map.el = li;
+		i = users.length;
+		users.push(map);
+		
+		$("#userlist")[0].appendChild(li);
+	} else {
+		// update dl
+		var dl = users[i].el.getElementsByTagName("dl")[0];
+		var spans = dl.getElementsByTagName("span");
+		
+		for (var j=0;j<spans.length;j++) {
+			var dd = spans[j].getElementsByTagName("dd")[0];
+			var dt = spans[j].getElementsByTagName("dt")[0];
+			
+			dd.textContent = map[dlList[dt.textContent]];
+		}
+	}
+	var li = users[i].el;
+	
+	li.className = getStatusState(map.status_state);
+	
+	var abbr = li.getElementsByTagName("abbr")[0];
+	abbr.setAttribute("title",map.full_name);
+	abbr.textContent = map.name;
+	
+	var span = li.getElementsByTagName("span")[0];
+	span.textContent = map.status_message;
 }
 function quickXhr(url,method,headers,content,onload) {
 	var xhr = new XMLHttpRequest();
