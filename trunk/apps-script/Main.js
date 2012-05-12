@@ -35,8 +35,8 @@ function deleteUsers() {
   
   var sheet = ss.getSheets()[1],
       len = sheet.getMaxRows(),
-      emails = sheet.getRange(1,5,len,1).getValues(),
-      names = sheet.getRange(1,3,len,1).getValues();
+      emails = sheet.getRange(2,5,len,1).getValues(), // first row is header
+      names = sheet.getRange(2,3,len,1).getValues();
   for (var i=0;i<len;i++) {
     if (emails[i][0])
       listbox.addItem(emails[i][0], names[i][0] + " (" + emails[i][0] + ")");

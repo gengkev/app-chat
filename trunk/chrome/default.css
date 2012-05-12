@@ -69,7 +69,6 @@ section#login > * {
 	width:100%;
 }
 #main table {
-	
 	margin-left: auto;
 	margin-right: auto;
 	text-align:left;
@@ -123,11 +122,9 @@ ul#userlist li {
 	padding: 10px;
 	margin: 3px 0;
 	
-	/* default */
-	border-color: hsl(360,0%,50%);
-	background-color: hsl(360,0%,90%);
-	
 	height:60px;
+	
+	overflow: hidden;
 }
 /*
 ul#userlist li, ul#userlist li dl {
@@ -142,12 +139,14 @@ ul#userlist li:hover {
 	height:auto;
 }
 ul#userlist li dl {
-	/*margin: 0;*/
-	opacity: 0;
+	margin: 20px 0 0 0;
 }
 ul#userlist li:hover dl {
-	/*margin-top: 10px;*/
-	opacity: 1;
+	margin-top: 10px;
+}
+ul#userlist li { /* default, aka offline */
+	border-color: hsl(0,0%,50%);
+	background-color: hsl(0,0%,90%);
 }
 ul#userlist li.available {
 	border-color: hsl(120,60%,50%);
@@ -160,6 +159,10 @@ ul#userlist li.busy {
 ul#userlist li.idle {
 	border-color: hsl(30,60%,50%);
 	background-color: hsl(30,40%,90%);
+}
+ul#userlist li.banned {
+	border-color: hsl(180,60%,50%);
+	background-color: hsl(180,40%,90%);
 }
 
 ul#userlist li:hover .user, ul#userlist li:hover .status {
@@ -202,14 +205,21 @@ ul#userlist li .status {
 	overflow: hidden;
 }
 ul#userlist dl dt {
-	display: inline-block;
+	display:inline-block;
 	font-weight: bold;
-	margin-right: 10px;
+	margin-right:5px;
 }
 ul#userlist dl dd {
 	display:inline-block;
 	margin: 0;
 }
+ul#userlist dl dt:after {
+	content: ':';
+}
+ul#userlist dl span {
+	display:block;
+}
+
 textarea#input {
 	font-family: sans-serif;
 	font-size: 11pt;
