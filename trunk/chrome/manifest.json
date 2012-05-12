@@ -8,7 +8,7 @@
 	
 	"app": {
 		"launch": {
-			"local_path": "login.html"
+			"local_path": "index.html"
 		}
 	},
 	
@@ -18,10 +18,7 @@
 		"run_at": "document_start"
 	}],
 	"permissions": [
-		"https://accounts.google.com/o/oauth2/auth",
-		"https://docs.google.com/feeds/*",
 		"https://spreadsheets.google.com/feeds/*",
-		"https://docs.googleusercontent.com/*",
 		"https://www.googleapis.com/oauth2/v1/tokeninfo"
 	]
 }

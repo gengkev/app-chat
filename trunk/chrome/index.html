@@ -6,24 +6,85 @@
 <link rel="stylesheet" type="text/css" href="default.css" />
 </head>
 <body>
-<section id="user"></section>
+<nav>
 
+<button id="user">Log in</button>
+<h1>App Chat</h1>
+</nav>
+<section id="login">
+<div class="cover">
+</div>
+<button id="do_login">Log in with your fcpsschools.net account</button>
+<button id="close_login" class="align_right" disabled>Close</button>
+<h1>Login details</h1>
+<ul>
+<li>Logged in: <span id="logged_in"></span></li>
+<li>Access token: <span id="access_token"></span></li>
+<li>Expires: <span id="expires"></span></li>
+<li>Email: <span id="email"></span></li>
+</ul>
+</section>
+<section id="main">
 <table>
+<tbody>
 <tr>
-<td colspan="2">
-chat goes here
+<td>
+<ul id="chat">
+<li><abbr class="user" title="Kevin Geng">Kevin G</abbr>Hello world!<br>lolwhat?</li>
+<li><abbr class="user" title="Aaron Gu">Aaron G</abbr>GENG KEVIN</li>
+<li><abbr class="user" title="Aaron Gu">Aaron G</abbr>and stop making me say stuff I never did &gt;:-(</li>
+<li><abbr class="user" title="Hyden Wang">Hyden W</abbr>YES pre-alpha early release</li>
+<li><abbr class="user" title="Kevin Geng">Kevin G</abbr>btw this is all faked<br>you knew that right?</li>
+</ul>
 </td>
 <td rowspan="2">
-users go here
+<ul id="userlist">
+
+<li class="available" id="self" data-users-index="0">
+<abbr title="You" class="user">You</abbr>
+<span class="status">Set status here</span>
+<dl>
+<dt>Email</dt><dd></dd>
+</dl>
+</li><!--
+<li class="busy">
+<abbr title="Hyden Wang" class="user">Hyden W</abbr>
+<span class="status">Pre-alpha early release!</span>
+<dl>
+<dt>Email</dt><dd>iforgot@fcpsschools.net</dd>
+</dl>
+</li><!--
+<li class="idle">
+<abbr title="Aaron Gu" class="user">Aaron G</abbr>
+<span class="status">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</span>
+<dl>
+<dt>Email</dt><dd>iforgot@fcpsschools.net</dd>
+</dl>
+</li>
+<li class="offline">
+<abbr title="David Liu" class="user">David L</abbr>
+<span class="status">Set status here</span>
+<dl>
+<dt>Email</dt><dd>iforgot@fcpsschools.net</dd>
+</dl>
+</li>-->
+<li class="offline">
+<abbr title="troll" class="user">trolololololololololololololololololololololololololol</abbr>
+<span class="status">Set status here, Don't set status here, Set status here, Don't set status here...</span>
+<dl>
+<dt>Email</dt><dd>iforgot@fcpsschools.net</dd>
+</dl>
+</li>
+
+</ul>
 </td>
 </tr>
 <tr>
 <td>
-textbox goes here
-</td>
-<td>
-enter button goes here
+<textarea id="input"></textarea>
 </td>
 </tr>
+</tbody>
 </table>
+</section>
 </body>
