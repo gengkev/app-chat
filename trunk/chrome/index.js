@@ -1,7 +1,9 @@
 function $(q){return document.querySelectorAll(q)};
 var logged_in = false, access_token = null, expires = null, email = null;
 var post_worksheet_url = null;
-var users = [
+var chats_last_date = 0;
+var users = {};
+/*
 	{
 		name: "You",
 		full_name: "",
@@ -12,7 +14,7 @@ var users = [
 		el: null,
 		spreadsheetId: ""
 	}
-];
+*/
 var user_poll_etag = null;
 /* Status states:
  * (negative) - Banned until (date)
@@ -97,12 +99,25 @@ function setLoginState() {
 			location.reload();
 		}
 		
-		users[0].email = email;
+		users[email] = {
+			name: "",
+			full_name: "",
+			status_state: 0,
+			status_message: "Set status here",
+			team: "",
+			email: email,
+			el: $("#self")[0],
+			spreadsheetId: ""
+		};
+		
 		
 		getUsers(function(){
-			getWorksheetUrl();
+			getWorksheetUrl(function(){
+				postToForm();
+			});
+			getChats();
+			poll();
 		});
-		beginPoll();
 	} else {
 		clearState();
 	}
@@ -113,7 +128,6 @@ function clearState() {
 	localStorage.removeItem("email");
 }
 document.addEventListener("DOMContentLoaded",function(e){
-	users[0].el = $("#self")[0];
 	
 	$("button#user")[0].onclick = function() {
 		location.replace("#login");
@@ -129,8 +143,13 @@ document.addEventListener("DOMContentLoaded",function(e){
 		}
 	}
 	
-	setLoginState();
+	$("#self .status")[0].onblur = function() {
+		postToForm(null,this.textContent);
+		lastUpdateStatus = new Date();
+	}
 	
+	setLoginState();
+	/*
 	$("textarea#input")[0].onkeyup = function(e) {
 		e = e || window.event;
 		var code = e.keyCode || e.which;
@@ -138,12 +157,12 @@ document.addEventListener("DOMContentLoaded",function(e){
 			postToForm("chat",this.value);
 			this.value = "";
 		}
-	}
+	}*/
 },false);
 
-function getWorksheetUrl() {
+function getWorksheetUrl(callback) {
 	var sheetUrl = "https://spreadsheets.google.com/feeds/worksheets/"
-	  + users[0].spreadsheetId + "/private/full?alt=json";
+	  + users[email].spreadsheetId + "/private/full?alt=json";
 	quickXhr(sheetUrl,"GET",{
 		"GData-Version": "3.0",
 		"Authorization": "Bearer "+access_token
@@ -151,14 +170,40 @@ function getWorksheetUrl() {
 		var json = JSON.parse(e.target.responseText);
 		post_worksheet_url = json.feed.entry[1].link[0].href;
 		//postToForm("chat","yay it works");
+		callback.call();
 	});
 }
-function beginPoll() {
-	var USERS_INTERVAL = 15 * 1000;
-	var CHAT_INTERVAL =   2 * 1000;
+var lastUpdateUser = +new Date(); //happens as init
+var lastUpdateChat = +new Date();
+var lastUpdateStatus = +new Date();
+
+var poll = (function() {
+	// 49 updates per minute, on average
+	var USERS_INTERVAL =  ( 30 * 1000) * 0.99;
+	var CHAT_INTERVAL =   (1.5 * 1000) * 0.99;
+	var STATUS_INTERVAL = ( 90 * 1000) * 0.99;
 	
-	setInterval(getUsers,USERS_INTERVAL);
-}
+	return function() {
+		var cur = +new Date();
+		if (cur - lastUpdateUser > USERS_INTERVAL) {
+			// update users
+			getUsers();
+			lastUpdateUser = cur;
+		}
+		if (cur - lastUpdateChat > CHAT_INTERVAL) {
+			// update chat
+			getChats();
+			lastUpdateChat = cur;
+		}
+		if (cur - lastUpdateStatus > STATUS_INTERVAL) {
+			// ping status
+			postToForm();
+			lastUpdateStatus = cur;
+		}
+		
+		setTimeout(poll,1000);
+	}
+}());
 
 function getUsers(callback) {
 	var userlist = $("#userlist")[0];
@@ -179,6 +224,7 @@ function getUsers(callback) {
 		
 		var json = JSON.parse(e.target.responseText);
 		var entries = json.feed.entry;
+		
 		entries.forEach(function(el,i) {
 			updateUser({
 				name: el.gsx$usagename.$t,
@@ -195,6 +241,75 @@ function getUsers(callback) {
 		// now we must sort the user list
 	});
 }
+function getChats() {
+	// this is the initial load...
+	
+	var url = "https://spreadsheets.google.com/feeds/list/tS9UIr5fIO6cnk_cSiu-RcA/od7/private/full"
+	  + "?alt=json&sq=time>" + chats_last_date;
+	quickXhr(url,"GET",{
+		"GData-Version": "3.0",
+		"Authorization": "Bearer "+access_token
+	},"",function(e) {
+		var json = JSON.parse(e.target.responseText);
+		var entries = json.feed.entry;
+		
+		if (!entries || entries.length == 0) return;
+		chats_last_date = parseInt(entries[entries.length-1].gsx$time.$t);
+		
+		entries.forEach(function(el,i) {
+			addChat(
+				new Date(parseInt(el.gsx$time.$t) * 1000),
+				el.gsx$user.$t,
+				el.gsx$type.$t,
+				el.gsx$message.$t
+			);
+		});
+		
+		var chatList = $("ul#chat")[0];
+		chatList.scrollTop = chatList.scrollHeight; // scroll to bottom
+	});
+}
+function addChat(time,user,type,message) {
+	var chatList = $("ul#chat")[0];
+	
+	var map = users[user];
+	
+	var li = document.createElement("li");
+	
+	var timeEl = document.createElement("time");
+	timeEl.setAttribute("datetime",time.toISOString());
+	timeEl.setAttribute("title",time.toString());
+	
+	var hours = time.getHours(),
+	    minutes = zeroPad(time.getMinutes(),2),
+	    seconds = zeroPad(time.getSeconds(),2),
+	    ampm = (hours>11?"PM":"AM");
+	
+	hours = zeroPad((time.getHours() + 11) % 12 + 1, 2);
+	
+	timeEl.textContent = hours+":"+minutes+ /*":"+seconds+*/ " "+ampm;
+	
+	li.appendChild(timeEl);
+	
+	var abbr = document.createElement("abbr");
+	abbr.classList.add("user");
+	abbr.title = map.full_name;
+	abbr.textContent = map.name;
+	li.appendChild(abbr);
+	
+	var span = document.createElement("span");
+	span.textContent = message;
+	li.appendChild(span);
+	
+	chatList.appendChild(li);
+}
+function zeroPad(n,len) {
+	n += "";
+	while(n.length < len) {
+		n = "0" + n;
+	}
+	return n;
+}
 function copyHashMap(map) {
 	var output = {};
 	for (var i in map) {
@@ -206,13 +321,8 @@ function copyHashMap(map) {
 function updateUser(map) {
 	map = copyHashMap(map); // to keep the object "pure"?
 	
-	for (var i=0,found=false;i<users.length;i++) {
-		if (users[i].email == map.email) {
-			found = true;
-			break;
-		}
-	}
-	if (!found) {
+	i = map.email;
+	if (!users[i]) {
 		// yay we have to create it
 		
 		var li = document.createElement("li");
@@ -236,8 +346,8 @@ function updateUser(map) {
 		}
 		
 		map.el = li;
-		i = users.length;
-		users.push(map);
+		
+		users[i] = map;
 		
 		$("#userlist")[0].appendChild(li);
 	} else {
@@ -266,30 +376,36 @@ function updateUser(map) {
 	map.el = li;
 	users[i] = map;
 }
-function postToForm(message1,message2) {
+// change this to use the list feed later, it's probably easier
+var postToForm = function(message1,message2) {
 	
 	var xml = '<feed xmlns=\"http://www.w3.org/2005/Atom\" xmlns:batch=\"http://schemas.google.com/gdata/batch\" '
-	  + 'xmlns:gs=\"http://schemas.google.com/spreadsheets/2006\"><id>'+post_worksheet_url+'</id>'
+	  + 'xmlns:gs=\"http://schemas.google.com/spreadsheets/2006\"><id>'+post_worksheet_url+'</id>';
 	  
-	  + '<entry><batch:id>A1</batch:id><batch:operation type=\"update\"/><id>'+post_worksheet_url+'/R1C1</id>'
-	  + '<link rel=\"edit\" type=\"application/atom+xml\" href=\"'+post_worksheet_url+'/R1C1\"/>'
-	  + '<gs:cell row=\"1\" col=\"1\" inputValue=\"'+message1+'\"/></entry>'
+	if (message1) {
+		xml += '<entry><batch:id>A1</batch:id><batch:operation type=\"update\"/><id>'+post_worksheet_url+'/R2C1</id>'
+		  + '<link rel=\"edit\" type=\"application/atom+xml\" href=\"'+post_worksheet_url+'/R2C1\"/>'
+		  + '<gs:cell row=\"2\" col=\"1\" inputValue=\"'+message1+'\"/></entry>';
+	}
+	if (message2) {
+		xml += '<entry><batch:id>A2</batch:id><batch:operation type=\"update\"/><id>'+post_worksheet_url+'/R2C2</id>'
+		  + '<link rel=\"edit\" type=\"application/atom+xml\" href=\"'+post_worksheet_url+'/R2C2\"/>'
+		  + '<gs:cell row=\"2\" col=\"2\" inputValue=\"'+message2+'\"/></entry>';
+	}
+	xml += '<entry><batch:id>A2</batch:id><batch:operation type=\"update\"/><id>'+post_worksheet_url+'/R2C3</id>'
+	  + '<link rel=\"edit\" type=\"application/atom+xml\" href=\"'+post_worksheet_url+'/R2C3\"/>'
+	  + '<gs:cell row=\"2\" col=\"3\" inputValue=\"'+Math.round(new Date()/1000)+'\"/></entry>';
 	  
-	  + '<entry><batch:id>A2</batch:id><batch:operation type=\"update\"/><id>'+post_worksheet_url+'/R1C2</id>'
-	  + '<link rel=\"edit\" type=\"application/atom+xml\" href=\"'+post_worksheet_url+'/R1C2\"/>'
-	  + '<gs:cell row=\"1\" col=\"2\" inputValue=\"'+message2+'\"/></entry>'
-	  
-	  + '</feed>';
-	console.log(xml);
-	
+	xml += '</feed>';
+
 	quickXhr(post_worksheet_url + "/batch","POST",{
 		"GData-Version": "3.0",
 		"Authorization": "Bearer "+access_token,
-		"If-None-Match": "blahblahblah"
+		"If-None-Match": "blahblahblah" // it's always new (POST), why do they need this?!
 	},xml,function(e){
-		console.log(e.responseText)
+		//console.log(e.responseText)
 	});
-}
+};
 function quickXhr(url,method,headers,content,onload) {
 	var xhr = new XMLHttpRequest();
 	xhr.open(method,url);

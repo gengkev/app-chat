@@ -1,6 +1,6 @@
 {
 	"name": "App Chat",
-	"version": "0.0",
+	"version": "0.1.0",
 	"manifest_version": 2,
 	
 	"icons": {
@@ -16,6 +16,11 @@
 		"matches": ["https://app-chat.googlecode.com/svn/trunk/chrome/callback.html"],
 		"js": ["inject.js"],
 		"run_at": "document_start"
+	},{
+		"matches": ["*://docs.google.com/a/fcpsschools.net/spreadsheet/*form*"],
+		"js": ["form_inject.js"],
+		"run_at": "document_end",
+		"all_frames": true
 	}],
 	"permissions": [
 		"https://spreadsheets.google.com/feeds/*",
