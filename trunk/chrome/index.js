@@ -1,5 +1,6 @@
 function $(q){return document.querySelectorAll(q)};
-var logged_in = false, access_code = null, expires = null, email = null;
+var logged_in = false, access_token = null, expires = null, email = null;
+var post_worksheet_url = null;
 var users = [
 	{
 		name: "You",
@@ -9,9 +10,10 @@ var users = [
 		email: "",
 		team: "",
 		el: null,
-		self: true
+		spreadsheetId: ""
 	}
 ];
+var user_poll_etag = null;
 /* Status states:
  * (negative) - Banned until (date)
  * 0 - offline
@@ -34,7 +36,7 @@ function getStatusState(status) {
 var dlList = {
 	"Status": "status_state_text",
 	"Email": "email",
-	"Full name": "full_name",
+	//"Full name": "full_name",
 	"Team": "team"
 }
 
@@ -68,17 +70,17 @@ function login() {
 	location.replace(url);
 }
 function setLoginState() {
-	access_code = getLocalStorage("access_token");
+	access_token = getLocalStorage("access_token");
 	expires = parseInt(getLocalStorage("expires"));
 	email = getLocalStorage("email");
-	logged_in = access_code && 
+	logged_in = access_token && 
 	            email && 
 	            expires && 
 	            expires === expires && 
 	            expires > Date.now()/1000 && 
 	            true;
 	
-	$("span#access_token")[0].textContent = (logged_in) ? access_code : "";
+	$("span#access_token")[0].textContent = (logged_in) ? access_token : "";
 	$("span#logged_in")[0].textContent = (logged_in) ? "yes" : "no";
 	$("span#expires")[0].textContent = (logged_in) ? new Date(expires*1000) : "expired";
 	$("span#email")[0].textContent = (logged_in) ? email : "";
@@ -89,18 +91,30 @@ function setLoginState() {
 	}
 	if (logged_in) {
 		$("#close_login")[0].removeAttribute("disabled");
-		$("#do_login")[0].setAttribute("disabled");
+		$("#do_login")[0].textContent = "Sign out of App Chat";
+		$("#do_login")[0].onclick = function() {
+			clearState();
+			location.reload();
+		}
 		
 		users[0].email = email;
 		
-		getUsers();
+		getUsers(function(){
+			getWorksheetUrl();
+		});
 		beginPoll();
+	} else {
+		clearState();
 	}
+}
+function clearState() {
+	localStorage.removeItem("access_token");
+	localStorage.removeItem("expires");
+	localStorage.removeItem("email");
 }
 document.addEventListener("DOMContentLoaded",function(e){
 	users[0].el = $("#self")[0];
 	
-	setLoginState();
 	$("button#user")[0].onclick = function() {
 		location.replace("#login");
 	};
@@ -114,22 +128,47 @@ document.addEventListener("DOMContentLoaded",function(e){
 			location.replace("index.html");
 		}
 	}
+	
+	setLoginState();
+
 },false);
 
+function getWorksheetUrl() {
+	var sheetUrl = "https://spreadsheets.google.com/feeds/worksheets/"
+	  + users[0].spreadsheetId + "/private/full?alt=json";
+	quickXhr(sheetUrl,"GET",{
+		"GData-Version": "3.0",
+		"Authorization": "Bearer "+access_token
+	},"",function(e) {
+		var json = JSON.parse(e.target.responseText);
+		post_worksheet_url = json.feed.entry[1].link[0].href;
+		postToForm("chat","yay it works");
+	});
+}
 function beginPoll() {
-	var USERS_INTERVAL = 10000;
-	var CHAT_INTERVAL = 2000;
+	var USERS_INTERVAL = 15 * 1000;
+	var CHAT_INTERVAL =   2 * 1000;
 	
 	setInterval(getUsers,USERS_INTERVAL);
 }
 
-function getUsers() {
+function getUsers(callback) {
 	var userlist = $("#userlist")[0];
 	var feed = "https://spreadsheets.google.com/feeds/list/tS9UIr5fIO6cnk_cSiu-RcA/od6/private/full?alt=json";
 	quickXhr(feed,"GET",{
 		"GData-Version": "3.0",
-		"Authorization": "Bearer "+access_code
+		"Authorization": "Bearer "+access_token,
+		"If-None-Match": user_poll_etag
 	},"",function(e) {
+		if (e.target.status != 200) {
+			if (e.target.status != 304) {
+				console.log("Error, response status "+e.target.status);
+			}
+			return;
+		}
+		
+		user_poll_etag = e.target.getResponseHeader("ETag");
+		
 		var json = JSON.parse(e.target.responseText);
 		var entries = json.feed.entry;
 		entries.forEach(function(el,i) {
@@ -140,9 +179,11 @@ function getUsers() {
 				status_state_text: getStatusState(el.gsx$statusstate.$t),
 				status_message: el.gsx$statusmessage.$t,
 				email: el.gsx$emailaddress.$t,
-				team: el.gsx$rcmsteam.$t
+				team: el.gsx$rcmsteam.$t,
+				spreadsheetId: el.gsx$spreadsheetid.$t
 			});
 		});
+		if(callback) callback.call();
 		// now we must sort the user list
 	});
 }
@@ -213,6 +254,76 @@ function updateUser(map) {
 	
 	var span = li.getElementsByTagName("span")[0];
 	span.textContent = map.status_message;
+	
+	map.el = li;
+	users[i] = map;
+}
+function postToForm(message1,message2) {
+
+	/* I give up!!!
+	
+	var feed = document.createElementNS("http://www.w3.org/2005/Atom","feed");
+	feed.setAttribute("xmlns","http://www.w3.org/2005/Atom");
+	feed.setAttribute("xmlns:batch","http://schemas.google.com/gdata/batch");
+	feed.setAttribute("xmlns:gs","http://schemas.google.com/spreadsheets/2006");
+	
+	var id = document.createElementNS("http://www.w3.org/2005/Atom","id");
+	id.textContent = post_worksheet_url;
+	feed.appendChild(id);
+	
+	var entry1 = document.createElementNS("http://www.w3.org/2005/Atom","entry");
+	var entry2 = entry1.cloneNode();
+	
+	var batch$id = document.createElementNS("http://schemas.google.com/gdata/batch","batch:id");
+	batch$id.textContent = "A1";
+	entry1.appendChild(batch$id);
+
+	batch$id = batch$id.cloneNode();
+	batch$id.textContent = "A2";
+	entry2.appendChild(batch$id);
+
+	var batch$operation = document.createElementNS("http://schemas.google.com/gdata/batch","batch:operation");
+	batch$operation.setAttribute("type","update");
+	entry1.appendChild(batch$operation);
+	entry2.appendChild(batch$operation.cloneNode());
+	
+	var gs$cell = document.createElementNS("http://schemas.google.com/spreadsheets/2006","gs:cell");
+	gs$cell.setAttribute("row","1");
+	gs$cell.setAttribute("col","1");
+	gs$cell.setAttribute("inputvalue",message1);
+	entry1.appendChild(gs$cell);
+	
+	gs$cell = gs$cell.cloneNode();
+	gs$cell.setAttribute("col","2");
+	gs$cell.setAttribute("inputvalue",message2);
+	entry2.appendChild(gs$cell);
+	
+	
+	feed.appendChild(entry1);
+	feed.appendChild(entry2);
+	*/
+	
+	var xml = '<feed xmlns=\"http://www.w3.org/2005/Atom\" xmlns:batch=\"http://schemas.google.com/gdata/batch\" '
+	  + 'xmlns:gs=\"http://schemas.google.com/spreadsheets/2006\"><id>'+post_worksheet_url+'</id>'
+	  
+	  + '<entry><batch:id>A1</batch:id><batch:operation type=\"update\"/><id>'+post_worksheet_url+'/R1C1</id>'
+	  + '<link rel=\"edit\" type=\"application/atom+xml\" href=\"'+post_worksheet_url+'/R1C1\"/>'
+	  + '<gs:cell row=\"1\" col=\"1\" inputValue=\"'+message1+'\"/></entry>'
+	  
+	  + '<entry><batch:id>A2</batch:id><batch:operation type=\"update\"/><id>'+post_worksheet_url+'/R1C2</id>'
+	  + '<link rel=\"edit\" type=\"application/atom+xml\" href=\"'+post_worksheet_url+'/R1C2\"/>'
+	  + '<gs:cell row=\"1\" col=\"2\" inputValue=\"'+message2+'\"/></entry>'
+	  
+	  + '</feed>';
+	console.log(xml);
+	
+	quickXhr(post_worksheet_url + "/batch","POST",{
+		"GData-Version": "3.0",
+		"Authorization": "Bearer "+access_token,
+		"If-None-Match": "blahblahblah"
+	},xml,function(e){
+		console.log(e.responseText)
+	});
 }
 function quickXhr(url,method,headers,content,onload) {
 	var xhr = new XMLHttpRequest();
