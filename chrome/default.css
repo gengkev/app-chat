@@ -33,7 +33,7 @@ button#user {
 section#login {
 	position:absolute;
 	background-color:white;
-	z-index:10;
+	z-index:100;
 	border-radius:20px;
 	border:3px solid #BBB;
 	margin:30px auto;
@@ -51,15 +51,17 @@ section#login > * {
 	z-index:12;
 }
 .cover {
-	position: fixed;
+	position: absolute;
 	text-align: center;
 	left:0px;
 	top:0px;
+	right: 0px;
+	bottom: 0px;
 	width:100%;
-	height:100%;
-	z-index:7;
+	z-index:9001;
 	background-color:rgba(200,200,200,0.8);
 	cursor:pointer;
+	display:none;
 }
 #main {
 	position: absolute;
@@ -71,9 +73,9 @@ section#login > * {
 #main table {
 	margin-left: auto;
 	margin-right: auto;
-	text-align:left;
-	border-collapse: collapse;
-	border-spacing: 0px;
+	text-align:left;/*
+	border-collapse: collapse;*/
+	border-spacing: 0;
 	border: 1px solid black;
 	
 	height:550px;
@@ -83,7 +85,7 @@ section#login > * {
 	height:400px;
 }
 #main table tr:nth-of-type(2) {
-	height:150px;
+	min-height:150px;
 }
 /*
 #main table tr td:nth-of-type(1) {
@@ -94,8 +96,11 @@ section#login > * {
 }*/
 #main table td {
 	/*border: 1px solid black;*/
-	padding: 0 !important;
+	padding: 0;
 	margin:0;
+}
+#main table tr:nth-of-type(2) td:nth-of-type(1) {
+	height: 100%;
 }
 ul#chat, ul#userlist {
 	list-style-type: none;
@@ -106,6 +111,7 @@ ul#chat, ul#userlist {
 	overflow-y: scroll;
 }
 ul#userlist {
+	border-left: 2px solid #CCC;
 	padding: 0;
 }
 ul#chat {
@@ -175,10 +181,15 @@ ul#chat li {
 	text-indent: -20px;
 	overflow: visible;
 }
+ul#chat li time {
+	float:right;
+	color:#AAA;
+	font-style: italic;
+}
 ul#userlist li#self {
 	margin-top: 0px;
 	margin-bottom: 8px;
-	outline: 2px dotted #AAA;
+	outline: 2px solid #CCC;
 	outline-offset: 3px;
 }
 .user {
@@ -228,9 +239,12 @@ textarea#input {
 	width: 100%;
 	height: 100%;
 	display: block;
-	border: 1px solid #AAA;
+	border: 2px solid #CCC;
+	border-right: 0px none transparent;
 	margin: 0;
+	overflow-y: scroll;
+	outline: 0px none transparent;
 }
 textarea#input:focus {
-	border: 1px solid hsl(30,100%,50%);
+	border: 2px solid hsl(30,40%,70%);
 }

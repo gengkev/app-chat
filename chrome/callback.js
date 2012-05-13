@@ -34,8 +34,8 @@ if (params.error) {
 		
 		if (response.audience != "578737917000.apps.googleusercontent.com") {
 			// I still don't know why I have to do this
-			$("#status")[0].textContent="Token validation failed (wrong clientid): "
-				+ response.audience + " versus " + client_id + ", error " + response.error;
+			xhr.onerror("Token validation failed (wrong clientid): "
+				+ response.audience + " versus " + client_id + ", error " + response.error);
 		}
 		else {
 			// hurrah
@@ -63,6 +63,6 @@ function done(access_token,expires,email) {
 	localStorage.setItem("expires",expires);
 	localStorage.setItem("email",email);
 	//location.replace(chrome.extension.getURL("index.html"));
-	location.replace("index.html");
+	location.replace("index.html#login");
 }
-}
+} // end if(window.chrome.extension)
