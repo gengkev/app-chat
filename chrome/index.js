@@ -3,6 +3,7 @@ var logged_in = false, access_token = null, expires = null, email = null;
 var post_worksheet_url = null;
 var chats_last_date = 0;
 var users = {};
+var notifications = Boolean(getLocalStorage("notifications"));
 /*
 	{
 		name: "You",
@@ -115,7 +116,7 @@ function setLoginState() {
 			getWorksheetUrl(function(){
 				postToForm();
 			});
-			getChats();
+			getChats(true);
 			poll();
 		});
 	} else {
@@ -139,13 +140,17 @@ document.addEventListener("DOMContentLoaded",function(e){
 	}
 	$("#close_login")[0].onclick = $(".cover")[0].onclick = function() {
 		if (logged_in) {
-			location.replace("index.html");
+			location.replace("#");
 		}
 	}
 	
 	$("#self .status")[0].onblur = function() {
 		postToForm(null,this.textContent);
 		lastUpdateStatus = new Date();
+	}
+	$("#notifications")[0].checked = notifications;
+	$("#notifications")[0].onchange = function() {
+		localStorage["notifications"] = notifications = this.checked;
 	}
 	
 	setLoginState();
@@ -241,7 +246,7 @@ function getUsers(callback) {
 		// now we must sort the user list
 	});
 }
-function getChats() {
+function getChats(initial) {
 	// this is the initial load...
 	
 	var url = "https://spreadsheets.google.com/feeds/list/tS9UIr5fIO6cnk_cSiu-RcA/od7/private/full"
@@ -254,7 +259,9 @@ function getChats() {
 		var entries = json.feed.entry;
 		
 		if (!entries || entries.length == 0) return;
-		chats_last_date = parseInt(entries[entries.length-1].gsx$time.$t);
+		
+		var lastChat = entries[entries.length-1];
+		chats_last_date = parseInt(lastChat.gsx$time.$t);
 		
 		entries.forEach(function(el,i) {
 			addChat(
@@ -267,6 +274,15 @@ function getChats() {
 		
 		var chatList = $("ul#chat")[0];
 		chatList.scrollTop = chatList.scrollHeight; // scroll to bottom
+		
+		if (!initial && notifications) {
+			var notification = webkitNotifications.createNotification(
+				"",
+				users[lastChat.gsx$user.$t].name + " says:",
+				lastChat.gsx$message.$t
+			);
+			notification.show();
+		}
 	});
 }
 function addChat(time,user,type,message) {
