@@ -130,7 +130,15 @@ document.addEventListener("DOMContentLoaded",function(e){
 	}
 	
 	setLoginState();
-
+	
+	$("textarea#input")[0].onkeyup = function(e) {
+		e = e || window.event;
+		var code = e.keyCode || e.which;
+		if (code == 13) {
+			postToForm("chat",this.value);
+			this.value = "";
+		}
+	}
 },false);
 
 function getWorksheetUrl() {
@@ -142,7 +150,7 @@ function getWorksheetUrl() {
 	},"",function(e) {
 		var json = JSON.parse(e.target.responseText);
 		post_worksheet_url = json.feed.entry[1].link[0].href;
-		postToForm("chat","yay it works");
+		//postToForm("chat","yay it works");
 	});
 }
 function beginPoll() {
@@ -259,49 +267,6 @@ function updateUser(map) {
 	users[i] = map;
 }
 function postToForm(message1,message2) {
-
-	/* I give up!!!
-	
-	var feed = document.createElementNS("http://www.w3.org/2005/Atom","feed");
-	feed.setAttribute("xmlns","http://www.w3.org/2005/Atom");
-	feed.setAttribute("xmlns:batch","http://schemas.google.com/gdata/batch");
-	feed.setAttribute("xmlns:gs","http://schemas.google.com/spreadsheets/2006");
-	
-	var id = document.createElementNS("http://www.w3.org/2005/Atom","id");
-	id.textContent = post_worksheet_url;
-	feed.appendChild(id);
-	
-	var entry1 = document.createElementNS("http://www.w3.org/2005/Atom","entry");
-	var entry2 = entry1.cloneNode();
-	
-	var batch$id = document.createElementNS("http://schemas.google.com/gdata/batch","batch:id");
-	batch$id.textContent = "A1";
-	entry1.appendChild(batch$id);
-
-	batch$id = batch$id.cloneNode();
-	batch$id.textContent = "A2";
-	entry2.appendChild(batch$id);
-
-	var batch$operation = document.createElementNS("http://schemas.google.com/gdata/batch","batch:operation");
-	batch$operation.setAttribute("type","update");
-	entry1.appendChild(batch$operation);
-	entry2.appendChild(batch$operation.cloneNode());
-	
-	var gs$cell = document.createElementNS("http://schemas.google.com/spreadsheets/2006","gs:cell");
-	gs$cell.setAttribute("row","1");
-	gs$cell.setAttribute("col","1");
-	gs$cell.setAttribute("inputvalue",message1);
-	entry1.appendChild(gs$cell);
-	
-	gs$cell = gs$cell.cloneNode();
-	gs$cell.setAttribute("col","2");
-	gs$cell.setAttribute("inputvalue",message2);
-	entry2.appendChild(gs$cell);
-	
-	
-	feed.appendChild(entry1);
-	feed.appendChild(entry2);
-	*/
 	
 	var xml = '<feed xmlns=\"http://www.w3.org/2005/Atom\" xmlns:batch=\"http://schemas.google.com/gdata/batch\" '
 	  + 'xmlns:gs=\"http://schemas.google.com/spreadsheets/2006\"><id>'+post_worksheet_url+'</id>'
