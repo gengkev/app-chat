@@ -34,7 +34,7 @@ function deleteUsers() {
   listbox.setVisibleItemCount(3);
   
   var sheet = ss.getSheets()[1],
-      len = sheet.getMaxRows(),
+      len = sheet.getMaxRows()-1,
       emails = sheet.getRange(2,5,len,1).getValues(), // first row is header
       names = sheet.getRange(2,3,len,1).getValues();
   for (var i=0;i<len;i++) {
@@ -80,4 +80,14 @@ function deleteUsers_click(e) {
 function getId() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   Browser.msgBox("Spreadsheet ID",ss.getId(),Browser.Buttons.OK);
+}
+function onFormSubmit(e) {
+  var date = Math.round(new Date(e.values[0])/1000),
+      user = e.values[1],
+      message = e.values[2];
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet(),
+      sheet = ss.getSheets()[0];
+  
+  sheet.appendRow([date,user,"chat",message]);
 }
