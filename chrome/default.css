@@ -190,7 +190,6 @@ ul#chat li span {
 ul#chat li time {
 	float:right;
 	color:#AAA;
-	font-style: italic;
 	display:inline-block;
 	width:70px;
 	text-align: right;

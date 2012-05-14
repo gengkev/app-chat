@@ -47,7 +47,7 @@ function addToSpreadsheet(e,r) {
   //ok then
   var user = range[1],
       team = range[5].charAt(0),
-      fullNickname = (range[3] || range[6]) + " " + range[4].charAt(0) + ".",
+      fullNickname = (range[3] || range[6]) + " " + range[4].charAt(0),
       fullName = range[6] + " " + (range[7].length ? range[7] + " " : "") + range[4];
   
   var ss2 = SpreadsheetApp.openById("0Ai-ZuFD3X1z4dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E"),
@@ -69,11 +69,11 @@ function addToSpreadsheet(e,r) {
   
   // let's make a new spreadsheet for this user!
   
-  var myfolder = DocsList.getFolderById("0By-ZuFD3X1z4UkpjWFRhekhoYW8");
   //myfolder.addViewer(user);
   ss2.addViewer(user);
   
   
+  var myfolder = DocsList.getFolderById("0By-ZuFD3X1z4UkpjWFRhekhoYW8");
   var newss = SpreadsheetApp.create(user);
   newss.addEditor(user); // their email address
   
@@ -83,7 +83,8 @@ function addToSpreadsheet(e,r) {
   newsheet0.setSheetProtection(permissions);
   newsheet0.setColumnWidth(1,720);
   newsheet0.getRange("A1")
-    .setValue("Don't mess around with this spreadsheet or you'll break stuff! Really. It should be removed from your home folder by the app, in any case.");
+    .setValue("Don't mess around with this spreadsheet, seriously! You'll just end up corrupting stuff. "
+            + "You can remove it from your home folder by selecting it, clicking More, and then \"Don't show in home.\"");
   
   newsheet0.deleteRows(2,newsheet0.getMaxRows()-1);
   newsheet0.deleteColumns(2,newsheet0.getMaxColumns()-1);
@@ -93,14 +94,19 @@ function addToSpreadsheet(e,r) {
   
   newsheet1.deleteRows(2,newsheet1.getMaxRows()-1);
   newsheet1.deleteColumns(2,newsheet1.getMaxColumns()-1);
-  newsheet1.insertColumnAfter(1);
+  newsheet1.insertColumnsAfter(1,2);
+  newsheet1.insertRowAfter(1);
+  newsheet1.getRange("A1:C2").setValues([
+    ["statusstate","statusmessage","lastupdated"],
+    [0,"Set status here",Math.round(new Date()/1000)]
+  ]);
   
   
   
   var newss_file = DocsList.getFileById(newss.getId());
   newss_file.addToFolder(myfolder);
   
-  ScriptApp.newTrigger("ssOnEdit").forSpreadsheet(newss).onEdit().create();
+  //ScriptApp.newTrigger("ssOnEdit2").forSpreadsheet(newss).onEdit().create();
   
   var date = Math.round(new Date(range[0])/1000);
   
@@ -120,9 +126,8 @@ function addToSpreadsheet(e,r) {
   ]]);
   
 }
-/* in the user specific spreadsheet, parameters:
- * 0: message
- * 1, 2, 3, 4 are saved for later expansion :D
+/* This is out of date with the new flow.
+ * Please don't use it.
  */
 function ssOnEdit(e) {
 
@@ -163,10 +168,11 @@ function ssOnEdit(e) {
   Logger.log(vals[1]);
 */
 // temporary workaround
-  if (e.range.rowStart != 1 || e.range.rowEnd != 1 || 
-      e.range.columnStart != 1 || e.range.columnEnd != 1) {
-    Logger.log("exiting because range dims are incorrect");
-  }
+  
+  //if (e.range.rowStart != 1 || e.range.rowEnd != 1 || 
+  //    e.range.columnStart != 1 || e.range.columnEnd != 1) {
+  //  Logger.log("exiting because range dims are incorrect");
+  //}
   
   // update chat thingy
   var ss2 = SpreadsheetApp.openById("0Ai-ZuFD3X1z4dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E"),
@@ -204,11 +210,11 @@ function ssOnEdit(e) {
   //}
   range3.clear();
   
-  /* possiblities for values[0]:
-   * 'chat' - allow all
-   * 'status_state' - allow all
-   * 'status_message' - allow all
-   */
+  // possiblities for values[0]:
+  // REMOVED - 'chat' - allow all
+  // 'status_state' - allow all
+  // 'status_message' - allow all
+  //
   switch(values[0]) {
     case "chat":
       ss2_0.appendRow([
@@ -224,26 +230,50 @@ function ssOnEdit(e) {
       break;
   }
 }
+function ssOnEdit2() {
+  var ss = SpreadsheetApp.openById("0Ai-ZuFD3X1z4dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E"),
+      sheet = ss.getSheets()[1],
+      len = sheet.getMaxRows();
+  
+  if (len <= 1) return; // no data, only header, will cause next line to error
+  var values = sheet.getRange(2,10,1,len).getValues();
+  
+  for (var i=0;i<values.length;i++) {
+    var ss2 = SpreadsheetApp.openById(values[i][0]),
+        sheet2 = ss2.getSheets()[1],
+        range2 = sheet2.getRange("A2:C2"),
+        values2 = range2.getValues()[0];
+    
+    values2[0] = parseInt(values2[0]);
+    
+    var statusstate = 0;
+    
+    if (values2[0] < 0 || 4 < values2[0] || // invalid value
+        Math.round(new Date()/1000) - parseInt(values2[2]) > 120) {
+        // you are offline if the state is 0 (invisible?) or lastupdated is greater than 5 minutes (it should ping every two minutes)
+      
+      // it's already 0!
+    }
+    else {
+      statusstate = values2[0];
+    }
+    
+    var statusrange = sheet.getRange(i+2,8,1,2);
+    if (parseInt(statusrange.getValues()[0][0]) < 0) {
+      // don't modify, banned
+    } else {
+      statusrange.setValues([[statusstate,values2[1]]]);
+    }
+    
+  }
+}
+      
 function blah() {
-  addToSpreadsheet(null,13);
+  addToSpreadsheet(null,3);
 }
 function blah2() {
   //var ss = SpreadsheetApp.openById("0Ai-ZuFD3X1z4dGswdFczVEpmNDFITzJUR3lxQ0VkRFE");
   ssOnEdit({value:"lol",user:"1390276@fcpsschools.net"});
-}
-function blah3() {
-  var triggers = ScriptApp.getScriptTriggers();
-  for (var i=0;i<triggers.length;i++) {
-    var del = Browser.msgBox("Hi",
-                     "Event type: "+triggers[i].getEventType() + " "
-                   + "source id: " + triggers[i].getTriggerSourceId() + " "
-                   + "handler function: "+triggers[i].getHandlerFunction() + " "
-                   + "unique id: "+triggers[i].getUniqueId(),
-                  Browser.Buttons.YES_NO);
-    if (del=="yes") {
-      ScriptApp.deleteTrigger(triggers[i]);
-    }
-  }
 }
 function cleanTriggers() {
   var triggers = ScriptApp.getScriptTriggers(),
