@@ -1,6 +1,6 @@
 {
 	"name": "App Chat",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"manifest_version": 2,
 	
 	"icons": {
@@ -13,7 +13,7 @@
 	},
 	
 	"content_scripts": [{
-		"matches": ["https://app-chat.googlecode.com/svn/trunk/chrome/callback.html"],
+		"matches": ["https://app-chat.googlecode.com/svn/tags/0.2.2/chrome/callback.html"],
 		"js": ["inject.js"],
 		"run_at": "document_start"
 	},{

@@ -54,7 +54,7 @@ function login() {
 	var params = {
 		"response_type": "token",
 		"client_id": "578737917000.apps.googleusercontent.com",
-		"redirect_uri": "https://app-chat.googlecode.com/svn/trunk/chrome/callback.html",
+		"redirect_uri": "https://app-chat.googlecode.com/svn/tags/0.2.2/chrome/callback.html",
 		"scope": [
 			"https://spreadsheets.google.com/feeds/",
 			"https://www.googleapis.com/auth/userinfo.email"
