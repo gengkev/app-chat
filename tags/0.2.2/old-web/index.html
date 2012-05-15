@@ -1,0 +1,79 @@
+<!doctype html>
+<meta charset=UTF-8 />
+<title>App Chat</title>
+
+<script>
+
+function jsonp(url,onerror) {
+  var s = document.createElement("script");
+  s.type = "text/javascript";
+  s.async = true;
+  s.src = url;
+  document.head.appendChild(s);
+}
+function $(id){return document.getElementById(id)};
+function checkAuth(result,something) {
+  console.log(result,something);
+  if (result) {
+    $("status").textContent+="\nHooray! Obtained access token! ";
+    $("access_token").textContent = result.access_token;
+    localStorage.setItem("access_token",result.access_token);
+    initialApiReq(result.access_token);
+  }
+  else {
+    $("status").textContent="Error! " //+result.error;
+  }
+}
+function gapiload() {
+  gapi.client.setApiKey("AIzaSyAggVbGJq1dHCuAe7wBw-0psUlShm9OiXc");
+  gapi.auth.init(function(){
+    gapi.auth.authorize({
+      client_id: "578737917000.apps.googleusercontent.com",
+      scope: "https://docs.google.com/feeds/ https://docs.googleusercontent.com/ "
+             + "https://spreadsheets.google.com/feeds/",
+      immediate: true,
+      hd: "fcpsschools.net"
+    },checkAuth);
+  });
+}
+function authorize() {
+  gapi.auth.authorize({
+    client_id: "578737917000.apps.googleusercontent.com",
+    scope: "https://docs.google.com/feeds/ https://docs.googleusercontent.com/ "
+           + "https://spreadsheets.google.com/feeds/",
+    immediate: false,
+    hd: "fcpsschools.net"
+  },checkAuth);
+}
+function initialApiReq(access_token){
+  // aww, back to jsonp i guess.
+
+  //jsonp("https://docs.google.com/feeds/default/private/full/-/folder?"
+  //    + "title=App+Chat&title-exact=true&"
+  //    + "v=3&alt=json-in-script&callback=initialCallback&access_token="+access_token);
+
+  gapi.client.request({
+    method: "GET",
+    path: "https://docs.google.com/feeds/default/private/full/-/folder",
+    params: {
+      "title": "App Chat",
+      "title-exact": "true",
+      "alt": "json",
+      "v": "3"
+    }
+  }).execute(function(response){
+  });
+}
+function initialCallback(response) {
+  // yay
+  var email = response.feed.author[0].email.$t;
+  $("email").textContent = email;
+  localStorage["email"]=email;
+}
+</script>
+<button onclick="authorize()">Login with your fcpsschools.net account<br /><br /><img src="logo.png" alt="FCPS Google Apps" /></button>
+<div id="status">Oh, hi there...</div>
+<div>Email: <span id="email"></span><br />
+Access token: <span id="access_token"></span><br />
+</div>
+<script async src="https://apis.google.com/js/client.js?onload=gapiload"></script>
