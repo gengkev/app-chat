@@ -1,9 +1,9 @@
 function $(q){return document.querySelectorAll(q)};
 var logged_in = false, access_token = null, expires = null, email = null;
 var post_worksheet_url = null;
-var chats_last_date = 0;
 var users = {};
 var notifications = Boolean(getLocalStorage("notifications"));
+
 /*
 	{
 		name: "You",
@@ -16,7 +16,6 @@ var notifications = Boolean(getLocalStorage("notifications"));
 		spreadsheetId: ""
 	}
 */
-var user_poll_etag = null;
 /* Status states:
  * (negative) - Banned until (date)
  * 0 - offline
@@ -129,7 +128,7 @@ function clearState() {
 	localStorage.removeItem("email");
 }
 document.addEventListener("DOMContentLoaded",function(e){
-	
+	$("#chat")[0].style.innerHTML = "";
 	$("button#user")[0].onclick = function() {
 		location.replace("#login");
 	};
@@ -144,6 +143,33 @@ document.addEventListener("DOMContentLoaded",function(e){
 		}
 	}
 	
+	$("#self .status-select")[0].onclick = function() {
+		var bla = users[email].status_state;
+		bla = Math.abs(bla % 2) + 1;
+		bla = (bla == 0) ? 1 : bla;
+		
+		var cur = +Date.now();
+		
+		postToForm(bla,null);
+		lastUpdateStatus = cur;
+		
+		users[email].status_state = bla;
+		this.parentNode.className = (bla == 2) ? "busy" : "available";
+		
+		setTimeout(function(){
+			getUsers();
+			lastUpdateUser = cur;
+		},1000);
+	}
+	
+	$("#self .status")[0].onkeydown = function(e) {
+		e = window.event || e;
+		var code = e.keyCode || e.which;
+		if (code == 13 && !e.shiftKey) {
+			this.blur();
+		}
+	}
+			
 	$("#self .status")[0].onblur = function() {
 		postToForm(null,this.textContent);
 		lastUpdateStatus = new Date();
@@ -209,8 +235,9 @@ var poll = (function() {
 		setTimeout(poll,1000);
 	}
 }());
-
-function getUsers(callback) {
+var getUsers = (function(){
+var user_poll_etag = null;
+return function(callback) {
 	var userlist = $("#userlist")[0];
 	var feed = "https://spreadsheets.google.com/feeds/list/tS9UIr5fIO6cnk_cSiu-RcA/od6/private/full?alt=json";
 	quickXhr(feed,"GET",{
@@ -246,19 +273,28 @@ function getUsers(callback) {
 		// now we must sort the user list
 	});
 }
-function getChats(initial) {
-	// this is the initial load...
-	
+}());
+var getChats = (function(){
+var chats_last_date = 0;
+var chats_poll_etag = "";
+return function(initial) {
 	var url = "https://spreadsheets.google.com/feeds/list/tS9UIr5fIO6cnk_cSiu-RcA/od7/private/full"
 	  + "?alt=json&sq=time>" + chats_last_date;
 	quickXhr(url,"GET",{
 		"GData-Version": "3.0",
-		"Authorization": "Bearer "+access_token
+		"Authorization": "Bearer "+access_token,
+		"If-None-Match": chats_poll_etag
 	},"",function(e) {
+		chats_poll_etag = e.target.getResponseHeader("ETag");
+		if (!e.target.responseText) {
+			return;
+		}
 		var json = JSON.parse(e.target.responseText);
 		var entries = json.feed.entry;
 		
-		if (!entries || entries.length == 0) return;
+		if (!entries || entries.length == 0) {
+			return;
+		}
 		
 		var lastChat = entries[entries.length-1];
 		chats_last_date = parseInt(lastChat.gsx$time.$t);
@@ -284,7 +320,8 @@ function getChats(initial) {
 			notification.show();
 		}
 	});
-}
+};
+}());
 function addChat(time,user,type,message) {
 	var chatList = $("ul#chat")[0];
 	

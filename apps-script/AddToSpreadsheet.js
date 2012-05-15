@@ -235,8 +235,11 @@ function ssOnEdit2() {
       sheet = ss.getSheets()[1],
       len = sheet.getMaxRows();
   
-  if (len <= 1) return; // no data, only header, will cause next line to error
-  var values = sheet.getRange(2,10,1,len).getValues();
+  if (len <= 1) {
+    Logger.log("len is "+len);
+    return; // no data, only header, will cause next line to error
+  }
+  var values = sheet.getRange(2,10,len,1).getValues();
   
   for (var i=0;i<values.length;i++) {
     var ss2 = SpreadsheetApp.openById(values[i][0]),

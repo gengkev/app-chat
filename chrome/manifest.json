@@ -1,6 +1,6 @@
 {
 	"name": "App Chat",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"manifest_version": 2,
 	
 	"icons": {
@@ -22,7 +22,7 @@
 			"*://docs.google.com/a/fcpsschools.net/spreadsheet/formResponse*"
 		],
 		"js": ["form_inject.js"],
-		"run_at": "document_end",
+		"run_at": "document_start",
 		"all_frames": true
 	}],
 	"permissions": [
