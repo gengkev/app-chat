@@ -1,7 +1,7 @@
 #summary How to install App Chat.
 
-The current version is available as a *Chrome app*, sorry other browsers!
-  # Make sure that you have filled out the form at http://goo.gl/ZYlRo
+The current version is available as a *[http://www.google.com/chrome Chrome] app*, sorry other browsers!
+  # Make sure that you have filled out [http://goo.gl/ZYlRo the form] to sign up first.
   # [http://app-chat.googlecode.com/svn/trunk/chrome.crx Install the app] in Google Chrome, and click Continue and whatever
   # Open the app by clicking its icon on the New Tab Page (press Ctrl+T)
   # Click "Log in with your fcpsschools.net account" and watch the magic happen.
