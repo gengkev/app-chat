@@ -1,0 +1,97 @@
+<!doctype html>
+<head>
+<meta charset="UTF-8" />
+<title>App Chat</title>
+<script type="text/javascript" src="index.js"></script>
+<link rel="stylesheet" type="text/css" href="default.css" />
+</head>
+<body>
+<div class="cover">
+</div>
+<nav>
+
+<button id="user">Log in</button>
+<h1>App Chat</h1><i>v. 0.2.1</i>
+</nav>
+<section id="login">
+<button id="do_login">Sign in with your fcpsschools.net account</button>
+<button id="close_login" class="align_right" disabled>Close</button>
+<h1>Login details</h1>
+<ul>
+<li>Logged in: <span id="logged_in"></span></li>
+<li>Access token: <span id="access_token"></span></li>
+<li>Expires: <span id="expires"></span></li>
+<li>Email: <span id="email"></span></li>
+</ul>
+<label for="notifications">Desktop notifications: <input type="checkbox" id="notifications" /></label>
+</section>
+<section id="main">
+<table>
+<tbody>
+<tr>
+<td>
+<ul id="chat">
+<i>Loading...</i>
+</ul>
+</td>
+<td rowspan="2">
+<ul id="userlist">
+
+<li id="self">
+<div class="status-select"></div>
+
+<abbr title="You" class="user">Loading...</abbr>
+<span class="status" contenteditable>Loading...</span>
+<dl>
+<span><dt>Status</dt><dd></dd></span>
+<span><dt>Email</dt><dd></dd></span>
+<!--span><dt>Full name</dt><dd></dd></span-->
+<span><dt>Team</dt><dd></dd></span>
+</dl>
+</li><!--
+<li class="busy">
+<abbr title="Hyden Wang" class="user">Hyden W</abbr>
+<span class="status">Pre-alpha early release!</span>
+<dl>
+<dt>Email</dt><dd>iforgot@fcpsschools.net</dd>
+</dl>
+</li><!--
+<li class="idle">
+<abbr title="Aaron Gu" class="user">Aaron G</abbr>
+<span class="status">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</span>
+<dl>
+<dt>Email</dt><dd>iforgot@fcpsschools.net</dd>
+</dl>
+</li>
+<li class="offline">
+<abbr title="David Liu" class="user">David L</abbr>
+<span class="status">Set status here</span>
+<dl>
+<dt>Email</dt><dd>iforgot@fcpsschools.net</dd>
+</dl>
+</li>
+<li class="offline">
+<abbr title="troll" class="user">trolololololololololololololololololololololololololol</abbr>
+<span class="status">Set status here, Don't set status here, Set status here, Don't set status here...</span>
+<dl>
+<dt>Email</dt><dd>iforgot@fcpsschools.net</dd>
+</dl>
+</li>
+-->
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<!--textarea id="input"></textarea-->
+<iframe id="input" src="https://docs.google.com/a/fcpsschools.net/spreadsheet/embeddedform?formkey=dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E6MQ" scrolling="no">Loading...</iframe>
+</td>
+</tr>
+</tbody>
+</table>
+<footer>
+<b>Note:</b> it may take up to <time>90 seconds</time> for your status to be updated to
+everyone, and <time>150 seconds</time> for people to become on/offline.<br />
+</footer>
+</section>
+</body>

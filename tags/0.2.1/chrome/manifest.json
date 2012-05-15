@@ -1,0 +1,37 @@
+{
+	"name": "App Chat",
+	"version": "0.2.1",
+	"manifest_version": 2,
+	
+	"icons": {
+	},
+	
+	"app": {
+		"launch": {
+			"local_path": "index.html"
+		}
+	},
+	
+	"content_scripts": [{
+		"matches": ["https://app-chat.googlecode.com/svn/trunk/chrome/callback.html"],
+		"js": ["inject.js"],
+		"run_at": "document_start"
+	},{
+		"matches": [
+			"*://docs.google.com/a/fcpsschools.net/spreadsheet/embeddedform*",
+			"*://docs.google.com/a/fcpsschools.net/spreadsheet/formResponse*"
+		],
+		"js": ["form_inject.js"],
+		"run_at": "document_start",
+		"all_frames": true
+	}],
+	"permissions": [
+		"https://spreadsheets.google.com/feeds/*",
+		"https://www.googleapis.com/oauth2/v1/tokeninfo",
+		"notifications"
+	],
+	"update_url": "https://app-chat.googlecode.com/svn/trunk/updates.xml",
+	"web_accessible_resources": [
+		"callback.html"
+	]
+}
