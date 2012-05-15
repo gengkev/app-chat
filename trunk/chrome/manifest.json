@@ -1,6 +1,6 @@
 {
 	"name": "App Chat",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"manifest_version": 2,
 	
 	"icons": {
@@ -30,5 +30,8 @@
 		"https://www.googleapis.com/oauth2/v1/tokeninfo",
 		"notifications"
 	],
-	"update_url": "https://app-chat.googlecode.com/svn/trunk/updates.xml"
+	"update_url": "https://app-chat.googlecode.com/svn/trunk/updates.xml",
+	"web_accessible_resources": [
+		"callback.html"
+	]
 }
