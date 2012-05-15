@@ -126,12 +126,67 @@ ul#userlist li {
 	/*border-bottom-style: solid;*/
 	border-left-style: solid;
 	/*border-right-style: solid;*/
-	padding: 10px;
+	padding: 10px 6px;
 	margin: 3px 0;
 	
 	height:60px;
 	
 	overflow: hidden;
+	position:relative;
+}
+ul#userlist li:hover {
+	height: auto;
+}
+ul#userlist li#self {
+	border-left-style: none;
+	margin-top: 0px;
+	margin-bottom: 8px; /* space for outline */
+	padding-left: 11px; /* 5px fake border + 6px padding */
+	outline: 2px solid #CCC;
+	outline-offset: 3px; /* shows only on bottom */
+	
+	overflow:visible;
+}
+li#self .status-select {
+	height:100%;
+	position:absolute;
+	top:0px;
+	left:0px;
+	z-index:10;
+	float:left;
+	margin:0;
+	border-style: solid;
+	border-width: 0 0 0 5px;
+	
+	cursor: pointer;
+}
+li#self:hover .status-select {
+	border-left-width:8px;
+	/*border-style: double;*/
+	/*border-left-style: dotted;
+	border-right-style:dotted;*/
+	width:10px;
+}
+li#self:hover .status {
+	border: 1px solid #BBB;
+}
+li#self .status:hover {
+	border: 1px solid #888;
+}
+li#self .status-select { /* offline, aka default */
+	border-color: hsl(0,0%,50%);
+}
+li#self.available .status-select {
+	border-color: hsl(120,60%,50%);
+}
+li#self.busy .status-select {
+	border-color: hsl(0,60%,50%);
+}
+li#self.idle .status-select {
+	border-color: hsl(30,60%,50%);
+}
+li#self.banned .status-select {
+	border-color: hsl(180,60%,50%);
 }
 /*
 ul#userlist li, ul#userlist li dl {
@@ -142,14 +197,12 @@ ul#userlist li, ul#userlist li dl {
 	-o-transition:      0.5s ease-in-out;
 	transition:         0.5s ease-in-out;
 }*/
-ul#userlist li:hover {
-	height:auto;
-}
 ul#userlist li dl {
-	margin: 20px 0 0 0;
+	margin: 22px 0 0 0;
+	display:none;
 }
 ul#userlist li:hover dl {
-	margin-top: 10px;
+	display:block;
 }
 ul#userlist li { /* default, aka offline */
 	border-color: hsl(0,0%,50%);
@@ -194,12 +247,7 @@ ul#chat li time {
 	width:70px;
 	text-align: right;
 }
-ul#userlist li#self {
-	margin-top: 0px;
-	margin-bottom: 8px;
-	outline: 2px solid #CCC;
-	outline-offset: 3px;
-}
+
 .user {
 	font-weight: bold;
 	display:inline-block;
@@ -211,6 +259,7 @@ ul#userlist li#self {
 ul#userlist li .user {
 	overflow: hidden;
 	display:block;
+	padding:0 3px;
 }
 ul#chat li .user:after {
 	content: ": ";
@@ -222,6 +271,8 @@ ul#userlist li .status {
 	display: block;
 	text-overflow:ellipsis;
 	overflow: hidden;
+	margin: 0;
+	padding:2px 3px;
 }
 ul#userlist dl dt {
 	display:inline-block;

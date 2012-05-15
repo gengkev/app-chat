@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
   <app appid='ggkljdbenejolgnpgfgkppamiokbhcmj'>
-    <updatecheck codebase='https://doc-14-74-docs.googleusercontent.com/docs/securesc/tkvp7ud24dku60tnqc2vq8tmabbdpqsj/i55u40sv5j2qmrd74m8e8oc4uegdp5m1/1336946400000/07809706738033514291/07809706738033514291/0By-ZuFD3X1z4Tk1mN3I0cDVqajg?h=15652913575329013557&e=download' version='0.1.0' />
+    <updatecheck codebase='https://app-chat.googlecode.com/svn/trunk/current.crx' version='0.2.0' />
   </app>
 </gupdate>
