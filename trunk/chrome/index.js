@@ -54,7 +54,7 @@ function login() {
 	var params = {
 		"response_type": "token",
 		"client_id": "578737917000.apps.googleusercontent.com",
-		"redirect_uri": "https://app-chat.googlecode.com/svn/tags/0.2.2/chrome/callback.html",
+		"redirect_uri": "https://app-chat.googlecode.com/svn/trunk/chrome/callback.html",
 		"scope": [
 			"https://spreadsheets.google.com/feeds/",
 			"https://www.googleapis.com/auth/userinfo.email"
@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded",function(e){
 	$("#self .status")[0].onkeydown = function(e) {
 		e = window.event || e;
 		var code = e.keyCode || e.which;
-		if (code == 13 && !e.shiftKey) {
+		if (code == 13) { // && !e.shiftKey) {
 			this.blur();
 		}
 	}
@@ -211,7 +211,7 @@ var lastUpdateStatus = +new Date();
 var poll = (function() {
 	// 49 updates per minute, on average
 	var USERS_INTERVAL =  ( 30 * 1000) * 0.99;
-	var CHAT_INTERVAL =   (1.5 * 1000) * 0.99;
+	var CHAT_INTERVAL =   (1.1 * 1000) * 0.99;
 	var STATUS_INTERVAL = ( 90 * 1000) * 0.99;
 	
 	return function() {
@@ -332,6 +332,10 @@ function addChat(time,user,type,message) {
 	var timeEl = document.createElement("time");
 	timeEl.setAttribute("datetime",time.toISOString());
 	timeEl.setAttribute("title",time.toString());
+	
+	var isToday = Math.floor(time / (1000 * 60 * 60 * 24)) ==
+	              Math.floor(Date.now() / (1000 ;
+	
 	
 	var hours = time.getHours(),
 	    minutes = zeroPad(time.getMinutes(),2),
