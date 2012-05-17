@@ -32,7 +32,7 @@ if (location.search.indexOf("formkey=dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E6MQ") != -1)
 			textarea.onkeypress = function(e) {
 				e = e || window.event;
 				var code = e.keyCode || e.which;
-				if (code == 13 && !e.shiftKey) {
+				if (code == 13) { // && !e.shiftKey) {
 					document.forms["ss-form"].submit.click();
 				}
 			}
