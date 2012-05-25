@@ -1,34 +1,16 @@
-
 if (location.search.indexOf("formkey=dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E6MQ") != -1) {
-	var blah = location.pathname.split("/");
-	switch (blah[blah.length-1].toLowerCase()) {
-	case "formresponse":
+	var blah = location.pathname.split("/").pop();
+	if (blah.toLowerCase() == "formresponse") {
 		location.replace("embeddedform?formkey=dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E6MQ");
-		break;
-	case "embeddedform":
+	} else if (blah.toLowerCase() == "embeddedform") {
 		//document.documentElement.style.display = "none";
-		
+	
 		document.addEventListener("DOMContentLoaded",function(){
-			document.querySelector(".ss-form-heading").style.display = "none";
-			document.querySelector(".ss-footer").style.display = "none";
+			document.body.style.display = "block !important";
 			document.getElementById("emailReceipt").checked = false;
-		
-			document.body.style.padding = "0";
-			document.body.style.width = "100%";
-		
+	
 			var textarea = document.getElementById("entry_0");
-			textarea.style.position = "absolute";
-			textarea.style.left = "0";
-			textarea.style.top = "0";
-			textarea.style.height="100%";
-			textarea.style.maxWidth= "100%";
-			textarea.style.width="100%";
-			textarea.style.zIndex="9999";
-			textarea.style.padding = "5px";
-			textarea.style.resize = "none";
-			textarea.style.border = "none";
-			textarea.style.display="block";
-		
+	
 			textarea.onkeypress = function(e) {
 				e = e || window.event;
 				var code = e.keyCode || e.which;
@@ -38,8 +20,9 @@ if (location.search.indexOf("formkey=dFM5VUlyNWZJTzZjbmtfY1NpdS1SY0E6MQ") != -1)
 			}
 			textarea.focus();
 		},false);
-		break;
-	default:
-		console.log(blah[blah.length-1]);
 	}
+} else {
+	document.addEventListener("DOMContentLoaded",function(){
+		document.body.classList.add("wrongForm");
+	},false);
 }

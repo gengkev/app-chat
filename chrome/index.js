@@ -3,19 +3,7 @@ var logged_in = false, access_token = null, expires = null, email = null;
 var post_worksheet_url = null;
 var users = {};
 var notifications = Boolean(getLocalStorage("notifications"));
-
-/*
-	{
-		name: "You",
-		full_name: "",
-		status_state: 0,
-		status_message: "Set status here",
-		email: "",
-		team: "",
-		el: null,
-		spreadsheetId: ""
-	}
-*/
+var last_notification = null;
 /* Status states:
  * (negative) - Banned until (date)
  * 0 - offline
@@ -101,7 +89,7 @@ function setLoginState() {
 		
 		users[email] = {
 			name: "",
-			full_name: "",
+			// full_name: "",
 			status_state: 0,
 			status_message: "Set status here",
 			team: "",
@@ -204,15 +192,14 @@ function getWorksheetUrl(callback) {
 		callback.call();
 	});
 }
-var lastUpdateUser = +new Date(); //happens as init
-var lastUpdateChat = +new Date();
+var lastUpdateUser   = +new Date(); //happens as init
+var lastUpdateChat   = +new Date();
 var lastUpdateStatus = +new Date();
 
 var poll = (function() {
-	// 49 updates per minute, on average
-	var USERS_INTERVAL =  ( 30 * 1000) * 0.99;
-	var CHAT_INTERVAL =   (1.1 * 1000) * 0.99;
-	var STATUS_INTERVAL = ( 90 * 1000) * 0.99;
+	var USERS_INTERVAL  = (30 * 995);
+	var CHAT_INTERVAL   = ( 1 * 995);
+	var STATUS_INTERVAL = (90 * 995);
 	
 	return function() {
 		var cur = +new Date();
@@ -260,7 +247,7 @@ return function(callback) {
 		entries.forEach(function(el,i) {
 			updateUser({
 				name: el.gsx$usagename.$t,
-				full_name: el.gsx$fullname.$t,
+				// full_name: el.gsx$fullname.$t,
 				status_state: el.gsx$statusstate.$t,
 				status_state_text: getStatusState(el.gsx$statusstate.$t),
 				status_message: el.gsx$statusmessage.$t,
@@ -311,13 +298,21 @@ return function(initial) {
 		var chatList = $("ul#chat")[0];
 		chatList.scrollTop = chatList.scrollHeight; // scroll to bottom
 		
+		if (last_notification) {
+			last_notification.cancel();
+		}
+		
 		if (!initial && notifications) {
-			var notification = webkitNotifications.createNotification(
+			last_notification = webkitNotifications.createNotification(
 				"",
 				users[lastChat.gsx$user.$t].name + " says:",
 				lastChat.gsx$message.$t
 			);
-			notification.show();
+			last_notification.onclick = function() {
+				window.focus();
+				last_notification.cancel();
+			}
+			last_notification.show();
 		}
 	});
 };
@@ -333,25 +328,31 @@ function addChat(time,user,type,message) {
 	timeEl.setAttribute("datetime",time.toISOString());
 	timeEl.setAttribute("title",time.toString());
 	
-	var isToday = Math.floor(time / (1000 * 60 * 60 * 24)) ==
-	              Math.floor(Date.now() / (1000 ;
 	
+	var daysAgo = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) - 
+	              Math.floor(time       / (1000 * 60 * 60 * 24));
 	
-	var hours = time.getHours(),
-	    minutes = zeroPad(time.getMinutes(),2),
-	    seconds = zeroPad(time.getSeconds(),2),
-	    ampm = (hours>11?"PM":"AM");
-	
-	hours = zeroPad((time.getHours() + 11) % 12 + 1, 2);
-	
-	timeEl.textContent = hours+":"+minutes+ /*":"+seconds+*/ " "+ampm;
+	if (daysAgo == 0) {
+		var hours = time.getHours(),
+			minutes = zeroPad(time.getMinutes(),2),
+			seconds = zeroPad(time.getSeconds(),2),
+			ampm = (hours >= 12 ?"PM":"AM");
+
+		hours = zeroPad((time.getHours() + 11) % 12 + 1, 2);
+
+		timeEl.textContent = hours+":"+minutes+ /*":"+seconds+*/ " "+ampm;
+	} else if (daysAgo == 1) {
+		timeEl.textContent = "Yesterday";
+	} else {
+		timeEl.textContent = daysAgo + " days ago";
+	}
 	
 	li.appendChild(timeEl);
 	
 	var abbr = document.createElement("abbr");
 	abbr.classList.add("user");
-	abbr.title = map.full_name;
-	abbr.textContent = map.name;
+	abbr.setAttribute("title",user);
+	abbr.textContent = (map) ? map.name : user;
 	li.appendChild(abbr);
 	
 	var span = document.createElement("span");
@@ -424,7 +425,7 @@ function updateUser(map) {
 	li.className = getStatusState(map.status_state);
 	
 	var abbr = li.getElementsByTagName("abbr")[0];
-	abbr.setAttribute("title",map.full_name);
+	// abbr.setAttribute("title",map.full_name);
 	abbr.textContent = map.name;
 	
 	var span = li.getElementsByTagName("span")[0];

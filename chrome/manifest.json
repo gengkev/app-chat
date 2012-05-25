@@ -1,6 +1,6 @@
 {
 	"name": "App Chat",
-	"version": "0.2.3",
+	"version": "0.3.0",
 	"manifest_version": 2,
 	
 	"icons": {
@@ -18,10 +18,11 @@
 		"run_at": "document_start"
 	},{
 		"matches": [
-			"*://docs.google.com/a/fcpsschools.net/spreadsheet/embeddedform*",
-			"*://docs.google.com/a/fcpsschools.net/spreadsheet/formResponse*"
+			"https://docs.google.com/a/fcpsschools.net/spreadsheet/embeddedform*",
+			"https://docs.google.com/a/fcpsschools.net/spreadsheet/formResponse*"
 		],
 		"js": ["form_inject.js"],
+		"css": ["form_css.css"],
 		"run_at": "document_start",
 		"all_frames": true
 	}],
