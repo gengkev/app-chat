@@ -98,7 +98,7 @@ function addToSpreadsheet(e,r) {
   newsheet1.insertRowAfter(1);
   newsheet1.getRange("A1:C2").setValues([
     ["statusstate","statusmessage","lastupdated"],
-    [0,"Set status here",Math.round(new Date()/1000)]
+    [0,"Set status here",0]
   ]);
   
   
