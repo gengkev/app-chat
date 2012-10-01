@@ -1,6 +1,6 @@
 {
 	"name": "App Chat",
-	"version": "0.3.0",
+	"version": "2.0.0.0",
 	"manifest_version": 2,
 	
 	"icons": {
@@ -8,31 +8,9 @@
 	
 	"app": {
 		"launch": {
-			"local_path": "index.html"
+			"web_url": "https://script.google.com/a/macros/fcpsschools.net/s/AKfycbznKBIgAEauVEEZFIC-YhJwQ0Z1u8a3ZVydj8OIDOO61Ib1Nzm9/exec"
 		}
 	},
 	
-	"content_scripts": [{
-		"matches": ["https://app-chat.googlecode.com/svn/trunk/chrome/callback.html"],
-		"js": ["inject.js"],
-		"run_at": "document_start"
-	},{
-		"matches": [
-			"https://docs.google.com/a/fcpsschools.net/spreadsheet/embeddedform*",
-			"https://docs.google.com/a/fcpsschools.net/spreadsheet/formResponse*"
-		],
-		"js": ["form_inject.js"],
-		"css": ["form_css.css"],
-		"run_at": "document_start",
-		"all_frames": true
-	}],
-	"permissions": [
-		"https://spreadsheets.google.com/feeds/*",
-		"https://www.googleapis.com/oauth2/v1/tokeninfo",
-		"notifications"
-	],
-	"update_url": "https://app-chat.googlecode.com/svn/trunk/updates.xml",
-	"web_accessible_resources": [
-		"callback.html"
-	]
+	"update_url": "https://app-chat.googlecode.com/svn/trunk/updates.xml"
 }

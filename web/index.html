@@ -1,0 +1,587 @@
+<!doctype html>
+<html>
+
+<head>
+<title>App Chat</title>
+<script>
+function universalFailure(idk) {
+	alert("Google Apps Script failure: "+idk.name+": "+idk.message);
+	console.error(idk);
+}
+function $id(id){return document.getElementById(id)}
+var userEmail = "";
+var users = {};
+
+/* Status states:
+ * (negative) - Banned until (date)
+ * 0 - offline
+ * 1 - online
+ * 2 - busy
+ * 3 - idle (online)
+ * 4 - idle (busy)
+ */
+var status_states = {
+	"": "banned",
+	"0": "offline",
+	"1": "available",
+	"2": "busy",
+	"3": "idle",
+	"4": "idle"
+};
+function getStatusState(state) {
+	return status_states[state] || status_states[""];
+}
+var dlList = {
+	"Status": function(user){ return getStatusState(user.status_state); },
+	"Email": function(user) { return user.email; },
+	"Team": function(user) { return user.team || "?"; }
+}
+window.onload = function() {
+	$id("user").innerHTML = userEmail;
+	console.log("onload, userEmail="+userEmail);
+	users[userEmail] = {
+		name: "",
+		status_state: 0,
+		status_message: "Set status here",
+		email: userEmail,
+		el: $id("self")
+	};
+	
+	
+	$id("chat").innerHTML = "";
+	$id("user").onclick = function() {
+		$id("login").style.display = "block";
+	};
+	
+	$id("close_login").onclick = $id("cover").onclick = function() {
+		$id("login").style.display = "none";
+	}
+	
+	var self = $id("self");
+	var selfStatusToggle = self.getElementsByClassName("status_toggle")[0];
+	selfStatusToggle.onclick = function() {
+		var bla = users[userEmail].status_state;
+		bla = Math.abs(bla % 2) + 1;
+		bla = (bla == 0) ? 1 : bla;
+		
+		updateStatus(bla, null);
+	}
+	
+	var selfStatusMessage = self.getElementsByClassName("status_message")[0];
+	selfStatusMessage.onkeydown = function(e) {
+		e = window.event || e;
+		var code = e.keyCode || e.which;
+		if (code == 13) { // && !e.shiftKey) {
+			this.blur();
+		}
+	}
+	selfStatusMessage.onblur = function() {
+		updateStatus(null, this.textContent);
+	}
+	
+	$id("input").onkeydown = function(e) {
+		e = window.event || e;
+		var code = e.keycode || e.which;
+		if (code == 13 && !e.shiftKey) {
+			console.log("submitting chat: "+this.value);
+			if (this.value.length <= 2000) {
+				google.script.run.withFailureHandler(universalFailure).addChat(this.value);
+			} else {
+				this.value = "";
+				alert("Messages must be less than 2000 characters in length");
+			}
+			var _this = this;
+			setTimeout(function() {
+				_this.value = "";
+			});
+		}
+	};
+	
+	console.log("begin polling");
+	poll();
+};
+
+// different counters, because the server was 5s ahead when I tested it.
+var lastUpdate = 0; // for our own interval
+var lastUpdateServer = 0; // we use to request from server
+var update_in_progress = false;
+var UPDATE_FREQUENCY = 750;
+
+function poll() {
+	if (Date.now() - lastUpdate > UPDATE_FREQUENCY && !update_in_progress) {
+		getUpdate();
+	}
+	setTimeout(poll, 150);
+}
+function getUpdate() {
+	if (update_in_progress) return;
+	update_in_progress = true;
+	google.script.run.withSuccessHandler(function(data) {
+		update_in_progress = false;
+		lastUpdate = Date.now();
+		lastUpdateServer = data.date;
+		if (data.users.length > 0) {
+			data.users.forEach(function(user) {
+				console.log(["adding user", JSON.stringify(user)]);
+				updateUser({
+					name: user.name,
+					status_state: user.status_state,
+					status_message: user.status_message,
+					email: user.email
+				});
+			});
+		}
+		if (data.chats.length > 0) {
+			
+			data.chats.forEach(function(chat) {
+				console.log(["adding chat", JSON.stringify(chat)]);
+				addChat(
+					new Date(parseInt(chat.time)),
+					chat.user,
+					chat.type,
+					chat.message
+				);
+			});
+			
+			var chatList = $id("chat");
+			chatList.scrollTop = chatList.scrollHeight;
+		}
+	}).withFailureHandler(universalFailure).getUpdate(lastUpdateServer);
+}
+function addChat(time, user, type, message) {
+	var chatList = $id("chat");
+	
+	var map = users[user];
+	
+	var li = document.createElement("li");
+	
+	var timeEl = document.createElement("span");
+	timeEl.className = "time";
+	timeEl.setAttribute("title",time.toString());
+	
+	
+	var daysAgo = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) - 
+	              Math.floor(time       / (1000 * 60 * 60 * 24));
+	
+	if (daysAgo == 0) {
+		var hours = time.getHours(),
+			minutes = zeroPad(time.getMinutes(),2),
+			seconds = zeroPad(time.getSeconds(),2),
+			ampm = (hours >= 12 ? "PM" : "AM");
+
+		hours = zeroPad((time.getHours() + 11) % 12 + 1, 2);
+
+		timeEl.textContent = hours+":"+minutes+ /*":"+seconds+*/ " "+ampm;
+	} else if (daysAgo == 1) {
+		timeEl.textContent = "Yesterday";
+	} else {
+		timeEl.textContent = daysAgo + " days ago";
+	}
+	
+	li.appendChild(timeEl);
+	
+	var abbr = document.createElement("abbr");
+	abbr.className = "user";
+	abbr.setAttribute("title",user);
+	abbr.textContent = (map) ? map.name : user;
+	li.appendChild(abbr);
+	
+	var span = document.createElement("span");
+	span.textContent = message;
+	li.appendChild(span);
+	
+	chatList.appendChild(li);
+}
+function zeroPad(n,len) {
+	n += "";
+	while(n.length < len) {
+		n = "0" + n;
+	}
+	return n;
+}
+function copyHashMap(map) {
+	var output = {};
+	for (var i in map) {
+		if (!map.hasOwnProperty(i)) continue;
+		output[i] = map[i];
+	}
+	return output;
+}
+function updateUser(map) {
+	map = copyHashMap(map); // to keep the object "pure"?
+	var i = map.email;
+	
+	if (!users[i]) {
+		// yay we have to create it
+		console.log("creating new user");
+		
+		var li = document.createElement("li");
+		
+		// lazy I am
+		li.innerHTML = '<span class=\"user\"></span><span class=\"status_message\"></span><dl></dl>';
+		dl = li.getElementsByTagName("dl")[0];
+		
+		for (var j in dlList) {
+			if (!dlList.hasOwnProperty(j)) continue;
+			var span = document.createElement("span"),
+			    dt = document.createElement("dt"),
+			    dd = document.createElement("dd");
+			
+			dt.textContent = j;
+			dd.textContent = dlList[j](map);
+			
+			span.appendChild(dt);
+			span.appendChild(dd);
+			dl.appendChild(span);
+		}
+		
+		map.el = li;
+		
+		users[i] = map;
+		
+		$id("userlist").appendChild(li);
+	} else {
+		console.log("updating current user");
+		// update dl
+		var dl = users[i].el.getElementsByTagName("dl")[0];
+		var spans = dl.getElementsByTagName("span");
+		
+		for (var j=0;j<spans.length;j++) {
+			var dd = spans[j].getElementsByTagName("dd")[0];
+			var dt = spans[j].getElementsByTagName("dt")[0];
+			
+			dd.textContent = dlList[dt.textContent](map);
+		}
+	}
+	var li = users[i].el;
+	
+	li.className = getStatusState(map.status_state);
+	
+	var abbr = li.getElementsByClassName("user")[0];
+	abbr.textContent = map.name;
+	
+	var span = li.getElementsByClassName("status_message")[0];
+	span.textContent = map.status_message;
+	
+	map.el = li;
+	users[i] = map;
+}
+
+function updateStatus(state, message) {
+	console.log("sending status: "+state+" "+message);
+	google.script.run.withFailureHandler(universalFailure).updateStatus(
+		state || users[userEmail].status_state,
+		message || users[userEmail].status_message
+	);
+}
+</script>
+<style type="text/css">
+* {
+	word-wrap: break-word;
+	font-family: Tahoma, Arial, sans-serif;
+}
+.align_right {
+	float: right;
+}
+.hidden {
+	display: none;
+}
+nav {
+	padding: 5px 20px;
+	margin: 0 0 10px 0;
+	border-bottom: 1px solid #CCC;
+	background-color: #EEE;
+	background-image: -webkit-linear-gradient(to bottom, #DDD, #FFF);
+	position: relative;
+}
+h1#title {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	text-shadow: -3px 3px 4px #CCC;
+	display: inline-block;
+	margin-right: 20px;
+}
+h1 {
+	font-size: 1.5em;
+}
+button#user {
+	float: right;
+	margin: 20px 5px;
+}
+.section#login {
+	position: absolute;
+	background-color: white;
+	z-index: 100;
+	border-radius: 20px;
+	border: 3px solid #BBB;
+	margin: 30px auto;
+	padding: 10px;
+	width: 50%;
+	left: 25%;
+	cursor: default;
+	display: none;
+}
+.section#login > * {
+	position: relative;
+	z-index: 12;
+}
+#cover {
+	position: absolute;
+	text-align: center;
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	width: 100%;
+	z-index: 9001;
+	background-color: rgba(200,200,200,0.8);
+	cursor: pointer;
+	display: none;
+}
+#main {
+	position: absolute;
+	width: 100%;
+}
+#main table tbody {
+	width:100%;
+}
+#main table {
+	margin-left: auto;
+	margin-right: auto;
+	text-align:left;/*
+	border-collapse: collapse;*/
+	border-spacing: 0;
+	border: 1px solid black;
+	
+	height:550px;
+}
+
+#main table td {
+	padding: 0;
+	margin: 0;
+}
+ul#chat, ul#userlist {
+	list-style-type: none;
+	padding: 5px 10px;
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	overflow-y: scroll;
+}
+ul#userlist {
+	border-left: 2px solid #CCC;
+	padding: 0;
+}
+
+ul#userlist li {
+	border-width: 5px;
+	width: 270px;
+	
+	border-left-style: solid;
+	padding: 10px 6px;
+	margin: 3px 0;
+	
+	height: 40px;
+	
+	overflow: hidden;
+	position: relative;
+}
+ul#userlist li:hover {
+	height: auto;
+}
+ul#userlist li .status_message {
+	/*max-width:200px;*/
+	color: #888;
+	white-space: nowrap;
+	display: block;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	margin: 0;
+	padding:2px 3px;
+}
+ul#userlist li .user {
+	overflow: hidden;
+	display: block;
+	padding: 0 3px;
+}
+ul#userlist li:hover .user, ul#userlist li:hover .status_message {
+	white-space: normal;
+}
+ul#userlist li dl {
+	margin: 22px 0 0 0;
+	display: none;
+}
+ul#userlist li:hover dl {
+	display:block;
+}
+ul#userlist li dl span {
+	display:block;
+}
+ul#userlist li dl dt {
+	display:inline-block;
+	font-weight: bold;
+	margin-right:5px;
+}
+ul#userlist li dl dt:after {
+	content: ':';
+}
+ul#userlist li dl dd {
+	display: inline-block;
+	margin: 0;
+}
+
+ul#userlist li#self {
+	border-left-style: none;
+	margin-top: 0px;
+	margin-bottom: 8px; /* space for outline */
+	padding-left: 11px; /* 5px fake border + 6px padding */
+	outline: 2px solid #CCC;
+	outline-offset: 3px; /* shows only on bottom */
+	overflow: visible;
+}
+li#self .status_toggle {
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 10;
+	float: left;
+	margin: 0;
+	border-style: solid;
+	border-width: 0 0 0 5px;
+	
+	cursor: pointer;
+}
+li#self:hover .status_toggle {
+	border-left-width: 8px;
+	/*
+	border-style: double;
+	border-left-style: dotted;
+	border-right-style: dotted;
+	*/
+}
+
+ul#userlist li, li#self .status_toggle { /* default, aka offline */
+	border-color: #808080; /* hsl(0,0%,50%); */
+	background-color: #E6E6E6; /* hsl(0,0%,90%); */
+}
+ul#userlist li.available, li#self.available .status_toggle {
+	border-color: #33CC33; /* hsl(120,60%,50%); */
+	background-color: #DBF0DB; /* hsl(120,40%,90%); */
+}
+ul#userlist li.busy, li#self.busy .status_toggle {
+	border-color: #CC3333; /* hsl(0,60%,50%); */
+	background-color: #F0DBDB; /* hsl(0,40%,90%); */
+}
+ul#userlist li.idle, li#self.idle .status_toggle {
+	border-color: #CC8033; /* hsl(30,60%,50%); */
+	background-color: #F0E6DB; /* hsl(30,40%,90%); */
+}
+ul#userlist li.banned, li#self.banned .status_toggle {
+	border-color: #33CCCC; /* hsl(180,60%,50%); */
+	background-color: #DBF0F0; /* hsl(180,40%,90%); */
+}
+
+ul#chat {
+	width: 600px;
+}
+ul#chat li {
+	list-style-type: none;
+	
+	text-indent: -20px;
+	overflow: visible;
+	margin: 0 5px 0 40px;
+	
+	font-size:16px;
+}
+ul#chat li span {
+	white-space: pre-wrap;
+}
+ul#chat li .time {
+	float:right;
+	color:#AAA;
+	display:inline-block;
+	width:70px;
+	text-align: right;
+}
+
+.user {
+	font-weight: bold;
+	display: inline-block;
+	margin: 0 5px 0 0;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	/*max-width: 200px;*/
+}
+ul#chat li .user:after {
+	content: ": ";
+}
+
+textarea#input {
+	border: 0px transparent none;
+	border-top: 1px solid #AAA;
+	padding: 10px;
+	width: 600px;
+	height: 100%;
+	font-family: sans-serif;
+	font-size: 11pt;
+	resize: none;
+	display: block;
+
+	margin: 0;
+	overflow-y: scroll;
+}
+.footer {
+	text-align: center;
+	margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+<div id="cover">
+</div>
+<nav>
+	<button id="user"></button>
+	<h1 id="title">App Chat</h1> <i>v2.0.0-alpha.1</i>
+</nav>
+<div class="section" id="login">
+	<button id="close_login" class="align_right">Close</button>
+	<h1>Login details</h1>
+	Login is now handled by Google Apps Script, and is therefore tied to your account.
+</div>
+<div class="section" id="main">
+	<table>
+		<tr>
+			<td>
+				<ul id="chat">
+					<i>Loading...</i>
+				</ul>
+			</td>
+			<td rowspan="2">
+				<ul id="userlist">
+					<li id="self">
+						<div class="status_toggle"></div>
+						<span title="You" class="user">Loading...</span>
+						<span class="status_message">Loading...</span>
+						<dl>
+							<span><dt>Status</dt><dd></dd></span>
+							<span><dt>Email</dt><dd></dd></span>
+							<span><dt>Team</dt><dd></dd></span>
+						</dl>
+					</li>
+				</ul>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<textarea id="input" autofocus></textarea>
+			</td>
+		</tr>
+	</table>
+	<div class="footer">
+		Created by <a href="https://plus.google.com/112830849462286532136/about" target="_blank">Kevin Geng</a>, when he had too much time on his hands.
+	</div>
+</div>
+</body>
+
+</html>
